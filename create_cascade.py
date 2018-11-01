@@ -88,6 +88,8 @@ def createCascade(doc):
 
         cascade.stages.append(stage)
 
+    return cascade
+
 
 if __name__ == "__main__":
     xml_file = r"haarcascade_frontalface_default.xml"

@@ -1,113 +1,47 @@
-import cv2
 import numpy as np
-import time
-import math
+import cv2
 
-
-class Frame(object):
+class ImageClass(object):
     def __init__(self):
-        frame_size = (0, 0)
-        frame = []
-        frame_ii = []
-        frame_sii = []
-        stddev = 0
-        mean = 0
+        self.img_size = (0, 0)
+        self.img_marked = []
+        self.img_scaled = 0
+        self.orig_img = []
+        self.img = []
+        self.scaleFactor = 1
+        self.factor = 1
+        self.bounding_box_factor = 0
 
-    def calcIntegral(self):
-        self.frame_ii = np.zeros(self.frame_size, dtype='u4')
+    def imageScaler(self):
+        self.img_scaled = 1
+        self.factor = self.factor * self.scaleFactor
 
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if y == 0:
-                    self.frame_ii[y][x] = self.frame[y][x]
-                if y > 0:
-                    self.frame_ii[y][
-                        x] = self.frame_ii[y - 1][x] + self.frame[y][x]
+        src_size = self.orig_img.shape
+        self.img_size = (int(src_size[0] / self.factor),
+                         int(src_size[1] / self.factor))
 
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if x == 0:
-                    self.frame_ii[y][x] = self.frame_ii[y][x]
-                else:
-                    self.frame_ii[y][
-                        x] = self.frame_ii[y][x - 1] + self.frame_ii[y][x]
+        self.bounding_box_factor = src_size[0] / self.img_size[0]
+        w1 = int(src_size[1])
+        h1 = int(src_size[0])
+        w2 = int(self.img_size[1])
+        h2 = int(self.img_size[0])
+        self.img = np.zeros((h2, w2), dtype=('u2'))
 
-        return self.frame_ii
+        x_ratio = int((w1 << 16) / w2 + 1)
+        y_ratio = int((h1 << 16) / h2 + 1)
 
-    def calcSquareImage(self):
-        self.frame_sii = np.zeros(self.frame_size, dtype='u8')
+        for i in range(h1):
+            for j in range(w1):
+                if j < w2 and i < h2:
+                    self.img[i][j] = self.orig_img[
+                        (i * y_ratio) >> 16][(j * x_ratio) >> 16]
 
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if y == 0:
-                    self.frame_sii[y][x] = np.uint64(
-                        self.frame[y][x]) * np.uint64(self.frame[y][x])
-                if y > 0:
-                    self.frame_sii[y][
-                        x] = self.frame_sii[y - 1][x] + np.uint64(
-                            self.frame[y][x]) * np.uint64(self.frame[y][x])
+        return self.img
 
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if x == 0:
-                    self.frame_sii[y][x] = np.uint64(
-                        self.frame[y][x]) * np.uint64(self.frame[y][x])
-                else:
-                    self.frame_sii[y][
-                        x] = self.frame_sii[y][x - 1] + np.uint64(
-                            self.frame[y][x]) * np.uint64(self.frame[y][x])
-
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if(y > 0):
-                    self.frame_sii[y][x] = self.frame_sii[y-1][x] + self.frame_sii[y][x]
-
-        return self.frame_sii
-
-    def calcStddev(self):
-        sii = np.zeros((2, 2), dtype='u8')
-        feature_size = (self.frame_size[0] - 1, self.frame_size[1] - 1)
-
-        mean = self.frame_ii[0][0] + self.frame_ii[feature_size[0]][feature_size[1]] - self.frame_ii[0][feature_size[1]] - self.frame_ii[feature_size[0]][0]
-
-        sii[0][0] = self.frame_sii[0][0]
-        sii[0][1] = self.frame_sii[0][feature_size[1]]
-        sii[1][0] = self.frame_sii[feature_size[0]][0]
-        sii[1][1] = self.frame_sii[feature_size[0]][feature_size[1]]
-
-        print(sii)
-        stddev =  sii[1][1] - sii[0][1] - sii[1][0] + sii[0][0]
-        print(stddev)
-        stddev = (stddev * feature_size[0] * feature_size[1])
-        mean_sq = np.uint64(np.uint64(mean) * np.uint64(mean))
-        stddev = stddev - mean_sq
-
-        if (stddev > 0):
-            stddev = int(math.sqrt(stddev))
-        else:
-            stddev = 1
-
-        self.stddev = stddev
-        return self.stddev
-
-
-if __name__ == "__main__":
-    img_fn = 'datasets/proba.pgm'
-
-    img = Frame()
-    img.frame = cv2.imread(img_fn, 0)
-    img.frame = img.frame[0:25,0:25]
-    img.frame_size = img.frame.shape
-
-    start_time = time.time()
-    img.calcIntegral()
-    print("--- Integral Image calc ---------------- %s ms ---" %
-          (time.time() * 1000 - start_time * 1000))
-    start_time = time.time()
-    img.calcSquareImage()
-    print("--- Square Integral Image Calc --------- %s ms ---" %
-          (time.time() * 1000 - start_time * 1000))
-    start_time = time.time()
-    stddev = img.calcStddev()
-    print("--- Stddev calc  ------------- --------- %s ms ---" %
-          (time.time() * 1000 - start_time * 1000))
+    def loadImage(self, fn):
+        self.orig_img = cv2.imread(fn,0)
+        self.img = self.orig_img
+        self.img_marked = cv2.imread(fn)
+        self.img_size = self.orig_img.shape
+        self.img_scaled = 0
+        self.factor = 1
