@@ -35,8 +35,8 @@ def createFeatures(stage, doc):
                 'leafValues']
         leafVal = leafVal.split(" ")
         leafVal = [256 * float(leafVal[0]), 256 * float(leafVal[1])]
-        feature.passVal = leafVal[1]
-        feature.failVal = leafVal[0]
+        feature.passVal = int(leafVal[1])
+        feature.failVal = int(leafVal[0])
         feature.threshold = doc['opencv_storage']['cascade']['stages']['_'][
             stage.stageIndex]['weakClassifiers']['_'][relative_index][
                 'internalNodes']
@@ -87,7 +87,6 @@ def createCascade(doc):
 
     for i in range(cascade.stageNum):
         stage = createStage(i, doc, cascade)
-
         cascade.stages.append(stage)
 
     return cascade
@@ -95,7 +94,9 @@ def createCascade(doc):
 
 if __name__ == "__main__":
     xml_file = r"haarcascade_frontalface_default.xml"
+    # xml_file = r"models/haarcascade_fullbody.xml"
     with open(xml_file) as fd:
         doc = xmltodict.parse(fd.read())
+
 
     cascade = createCascade(doc)

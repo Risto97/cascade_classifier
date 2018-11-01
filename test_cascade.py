@@ -7,8 +7,8 @@ import numpy as np
 
 import time
 
-img_fn = 'datasets/1.pgm'
-xml_file = r"haarcascade_frontalface_default.xml"
+img_fn = 'datasets/lena.pgm'
+xml_file = r"models/haarcascade_frontalface_default.xml"
 with open(xml_file) as fd:
     doc = xmltodict.parse(fd.read())
 

@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 class ImageClass(object):
     def __init__(self):
         self.img_size = (0, 0)
@@ -33,13 +34,13 @@ class ImageClass(object):
         for i in range(h1):
             for j in range(w1):
                 if j < w2 and i < h2:
-                    self.img[i][j] = self.orig_img[
-                        (i * y_ratio) >> 16][(j * x_ratio) >> 16]
+                    self.img[i][j] = self.orig_img[(i * y_ratio)
+                                                   >> 16][(j * x_ratio) >> 16]
 
         return self.img
 
     def loadImage(self, fn):
-        self.orig_img = cv2.imread(fn,0)
+        self.orig_img = cv2.imread(fn, 0)
         self.img = self.orig_img
         self.img_marked = cv2.imread(fn)
         self.img_size = self.orig_img.shape
@@ -50,28 +51,45 @@ class ImageClass(object):
         f = open(fn, "w")
         WIDTH = img.img_size[1]
         HEIGHT = img.img_size[0]
-        print(f"WIDTH = {WIDTH};", file=f)
-        print(f"HEIGHT = {HEIGHT};\n", file=f)
-        print(f"unsigned char img[{HEIGHT}][{WIDTH}]=", end='', file=f)
+        print(f"#ifndef SLIKA_HPP", file=f)
+        print(f"#define SLIKA_HPP\n", file=f)
+        print(f"#include <stdint.h>\n", file=f)
+        print(f"const int WIDTH = {WIDTH};", file=f)
+        print(f"const int HEIGHT = {HEIGHT};\n", file=f)
+        print(f"uint8_t img[{HEIGHT}][{WIDTH}]=", end='', file=f)
         print("{", file=f)
 
         for y in range(HEIGHT):
             print("{", end='', file=f)
             for x in range(WIDTH):
-                if x < WIDTH-1:
+                if x < WIDTH - 1:
                     print(f"{img.img[y][x]}", end=',', file=f)
                 else:
                     print(f"{img.img[y][x]}", end='', file=f)
 
-            if y < HEIGHT-1:
+            if y < HEIGHT - 1:
                 print("},", end="\n\n", file=f)
             else:
                 print("}\n};", file=f)
 
+        print(f"\n#endif", file=f)
+
 
 if __name__ == "__main__":
-    img_fn = 'datasets/1.pgm'
+    img_fn = 'datasets/proba.pgm'
     img = ImageClass()
     img.loadImage(img_fn)
 
-    img.dumpArrayC("slika.h")
+    img.dumpArrayC("c/slika.hpp")
+
+    # import time
+    # start_time = time.time()
+    # slika = np.zeros(img.img_size, dtype='u2')
+    # for y in range(img.img_size[0]):
+    #     for x in range(img.img_size[1]):
+    #         slika[y][x] = img.img[y][x]
+
+    # print("--- Time --------- %s ms ---" %
+    #       (time.time() * 1000 - start_time * 1000))
+
+#include <ctime>
