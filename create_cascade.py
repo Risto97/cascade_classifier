@@ -8,7 +8,7 @@ def createStage(num, doc, cascade):
     stage.stageIndex = num
     stage.maxWeakCount = int(
         doc['opencv_storage']['cascade']['stages']['_'][num]['maxWeakCount'])
-    stage.stageThreshold = 255 * float(
+    stage.stageThreshold = 0.4 * 255 * float(
         doc['opencv_storage']['cascade']['stages']['_'][num]['stageThreshold'])
 
     if num == 0:
@@ -48,11 +48,12 @@ def createFeatures(stage, doc):
 
     return features
 
+
 def createRects(feature, doc):
     rects = []
 
-    rects_dict = doc['opencv_storage']['cascade']['features']['_'][feature.featureNum][
-        'rects']['_']
+    rects_dict = doc['opencv_storage']['cascade']['features']['_'][
+        feature.featureNum]['rects']['_']
 
     for r in rects_dict:
         rect = RectClass()
@@ -62,13 +63,14 @@ def createRects(feature, doc):
         r = [int(x) for x in r]
 
         rect.A = {'x': r[0], 'y': r[1]}
-        rect.B = {'x': r[0]+r[2], 'y': r[1]}
-        rect.C = {'x': r[0], 'y': r[1]+r[3]}
-        rect.D = {'x': r[0]+r[2], 'y': r[1]+r[3]}
-        rect.weight = r[4]*4096
+        rect.B = {'x': r[0] + r[2], 'y': r[1]}
+        rect.C = {'x': r[0], 'y': r[1] + r[3]}
+        rect.D = {'x': r[0] + r[2], 'y': r[1] + r[3]}
+        rect.weight = r[4] * 4096
         rects.append(rect)
 
     return rects
+
 
 def createCascade(doc):
     cascade = CascadeClass()

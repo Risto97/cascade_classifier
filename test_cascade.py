@@ -7,7 +7,7 @@ import numpy as np
 
 import time
 
-img_fn = 'datasets/proba.pgm'
+img_fn = 'datasets/1.pgm'
 xml_file = r"haarcascade_frontalface_default.xml"
 with open(xml_file) as fd:
     doc = xmltodict.parse(fd.read())

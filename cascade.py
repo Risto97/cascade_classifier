@@ -41,7 +41,7 @@ class StageClass(object):
         for feature in self.features:
             sum += feature.getResult(img, stddev)
 
-        if sum < 0.4 * self.stageThreshold:
+        if sum < self.stageThreshold:
             return False
         else:
             return True

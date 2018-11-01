@@ -45,3 +45,33 @@ class ImageClass(object):
         self.img_size = self.orig_img.shape
         self.img_scaled = 0
         self.factor = 1
+
+    def dumpArrayC(self, fn):
+        f = open(fn, "w")
+        WIDTH = img.img_size[1]
+        HEIGHT = img.img_size[0]
+        print(f"WIDTH = {WIDTH};", file=f)
+        print(f"HEIGHT = {HEIGHT};\n", file=f)
+        print(f"unsigned char img[{HEIGHT}][{WIDTH}]=", end='', file=f)
+        print("{", file=f)
+
+        for y in range(HEIGHT):
+            print("{", end='', file=f)
+            for x in range(WIDTH):
+                if x < WIDTH-1:
+                    print(f"{img.img[y][x]}", end=',', file=f)
+                else:
+                    print(f"{img.img[y][x]}", end='', file=f)
+
+            if y < HEIGHT-1:
+                print("},", end="\n\n", file=f)
+            else:
+                print("}\n};", file=f)
+
+
+if __name__ == "__main__":
+    img_fn = 'datasets/1.pgm'
+    img = ImageClass()
+    img.loadImage(img_fn)
+
+    img.dumpArrayC("slika.h")
