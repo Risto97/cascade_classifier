@@ -58,11 +58,14 @@ int featureRes(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
           ii[rect1[feature_num][1][1]][rect1[feature_num][1][0]];
   sum2 *= weight1[feature_num];
 
-  sum3 += ii[rect2[feature_num][0][1]][rect2[feature_num][0][0]] +
-          ii[rect2[feature_num][3][1]][rect2[feature_num][3][0]] -
-          ii[rect2[feature_num][2][1]][rect2[feature_num][2][0]] -
-          ii[rect2[feature_num][1][1]][rect2[feature_num][1][0]];
-  sum3 *= weight1[feature_num];
+  if(weight2[feature_num] != 0){
+    sum3 += ii[rect2[feature_num][0][1]][rect2[feature_num][0][0]] +
+            ii[rect2[feature_num][3][1]][rect2[feature_num][3][0]] -
+            ii[rect2[feature_num][2][1]][rect2[feature_num][2][0]] -
+            ii[rect2[feature_num][1][1]][rect2[feature_num][1][0]];
+    sum3 *= weight2[feature_num];
+  }
+  else sum3 = 0;
 
   sum = sum1 + sum2 + sum3;
 

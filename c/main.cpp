@@ -33,8 +33,8 @@ int main()
 
   start = std::clock();
   while(img_height > FRAME_HEIGHT && img_width > FRAME_WIDTH){
-    for(y = 0; y < IMG_HEIGHT-FRAME_HEIGHT-1; y++){
-      for(x=0; x < IMG_WIDTH-FRAME_WIDTH-1; x++){
+    for(y = 0; y < IMG_HEIGHT-FRAME_HEIGHT-1; y+=1){
+      for(x=0; x < IMG_WIDTH-FRAME_WIDTH-1; x +=1){
         calcIntegralImages(img_scaled, x, y, img_ii, img_sii);
         stddev = calcStddev(img_sii, img_ii);
         result = detect(img_ii, stddev);
