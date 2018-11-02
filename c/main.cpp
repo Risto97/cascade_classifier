@@ -10,6 +10,7 @@
 int main()
 {
   std::clock_t start;
+  std::clock_t full_time;
   int y= 0;
   int x = 0;
 
@@ -31,13 +32,23 @@ int main()
   }
   // calcIntegralImages(img, 0, 0, img_ii, img_sii);
 
-  start = std::clock();
+
+  double integral_calc_time = 0;
+  double detector_time = 0;
+  double stddev_time = 0;
+  full_time = std::clock();
   while(img_height > FRAME_HEIGHT && img_width > FRAME_WIDTH){
     for(y = 0; y < IMG_HEIGHT-FRAME_HEIGHT-1; y+=1){
       for(x=0; x < IMG_WIDTH-FRAME_WIDTH-1; x +=1){
+        start = std::clock();
         calcIntegralImages(img_scaled, x, y, img_ii, img_sii);
+        integral_calc_time += std::clock()-start;
+        start = std::clock();
         stddev = calcStddev(img_sii, img_ii);
+        stddev_time += std::clock()-start;
+        start = std::clock();
         result = detect(img_ii, stddev);
+        detector_time += std::clock()-start;
         if(result == 1){
           std::cout << "DETECTED " << "y: " << y << " | x: " << x << "\n";
         }
@@ -49,7 +60,10 @@ int main()
     imageScaler(img, img_scaled, factor);
   }
 
-  std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+  std::cout << "Full_Time: " << (std::clock() - full_time) / (double)(CLOCKS_PER_SEC /1000 ) << " ms" << std::endl;
+  std::cout << "Detector_Time: " << (detector_time) / (double)(CLOCKS_PER_SEC /1000 ) << " ms" << std::endl;
+  std::cout << "Integral_Time: " << (integral_calc_time) / (double)(CLOCKS_PER_SEC /1000 ) << " ms" << std::endl;
+  std::cout << "Stddev_Time: " << (stddev_time) / (double)(CLOCKS_PER_SEC /1000 ) << " ms" << std::endl;
 
   return 0;
 }
