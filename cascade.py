@@ -54,6 +54,16 @@ class CascadeClass(object):
                 print(f"{int(stage.stageThreshold)}", end='', file=f)
         print("};\n", file=f)
 
+
+        print(f"const signed int featureThresholds[{self.featuresNum}]=", end='{', file=f)
+        for stage in self.stages:
+            for feature in stage.features:
+                if feature.featureNum == self.featuresNum-1:
+                    print(f"{feature.threshold}", end = '', file=f)
+                else:
+                    print(f"{feature.threshold}", end = ',', file=f)
+        print("};\n", file=f)
+
         print(
             f"const signed int passVal[{self.featuresNum}]=",
             end='{', file=f)

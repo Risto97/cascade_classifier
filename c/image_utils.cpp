@@ -1,8 +1,31 @@
 #include <stdint.h>
+#include <iostream>
 // #include "slika.hpp"
 #include "image_utils.hpp"
 #include <math.h>
 
+void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
+                 uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH],
+                 float factor){
+
+  uint32_t x_ratio;
+  uint32_t y_ratio;
+
+  uint16_t w1 = IMG_WIDTH;
+  uint16_t h1 = IMG_HEIGHT;
+  uint16_t w2 = w1 / factor;
+  uint16_t h2 = h1 / factor;
+
+  x_ratio = (w1 << 16) / w2 + 1;
+  y_ratio = (h1 << 16) / h2 + 1;
+
+
+  for(int y =0; y < h2; y++){
+    for(int x=0; x < w2; x++){
+      img_scaled[y][x] = img_orig[(y*y_ratio)>>16][(x*x_ratio)>>16];
+    }
+  }
+}
 void calcIntegralImages(uint8_t i[IMG_HEIGHT][IMG_WIDTH],
                         int x_start,
                         int y_start,

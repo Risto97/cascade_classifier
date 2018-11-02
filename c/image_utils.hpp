@@ -3,10 +3,14 @@
 
 #include <stdint.h>
 // #include "slika.hpp"
-const int IMG_HEIGHT = 240;
-const int IMG_WIDTH = 320;
+const int IMG_HEIGHT = 275;
+const int IMG_WIDTH = 410;
 const int FRAME_WIDTH = 25;
 const int FRAME_HEIGHT = 25;
+
+void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
+                 uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH],
+                 float factor);
 
 void calcIntegralImages(uint8_t i[IMG_HEIGHT][IMG_WIDTH],
                         int x_start,

@@ -40,7 +40,7 @@ def createFeatures(stage, doc):
         feature.threshold = doc['opencv_storage']['cascade']['stages']['_'][
             stage.stageIndex]['weakClassifiers']['_'][relative_index][
                 'internalNodes']
-        feature.threshold = 4096 * float(feature.threshold.split(" ")[3])
+        feature.threshold = int(4096 * float(feature.threshold.split(" ")[3]))
 
         feature.rects = createRects(feature, doc)
 
