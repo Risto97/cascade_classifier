@@ -33,38 +33,36 @@ void calcIntegralImages(uint8_t i[IMG_HEIGHT][IMG_WIDTH],
                         uint64_t sii[FRAME_HEIGHT][FRAME_WIDTH]){
   int y = 0;
   int x = 0;
+  int abs_x = 0;
+  int abs_y = 0;
+  int sum_row = 0;
+  uint64_t product = 0;
+  uint64_t sum_row_sq = 0;
+  uint64_t sum_col_sq[FRAME_WIDTH] = {0};
 
-  for(x=0; x < FRAME_WIDTH; x++){
-    for(y = 0; y < FRAME_HEIGHT; y++){
-      if(y == 0){
-        ii[y][x] = i[y+y_start][x+x_start];
-        sii[y][x] = i[y+y_start][x+x_start] * i[y+y_start][x+x_start];
+  for(y = 0; y < FRAME_HEIGHT; y++){
+    sum_row = 0;
+    sum_row_sq = 0;
+    for(x = 0; x < FRAME_WIDTH; x++){
+      abs_x = x+x_start;
+      abs_y = y+y_start;
+      sum_row += i[abs_y][abs_x];
+      product = i[abs_y][abs_x] * i[abs_y][abs_x];
+      sum_col_sq[x] += product;
+      sum_row_sq += product;
+      if(y > 0){
+        ii[y][x] = sum_row + ii[y-1][x];
+        sii[y][x] = sum_col_sq[x];
+        if(x > 0){
+          sii[y][x] += sii[y][x-1];
+        }
       }
-      else {
-        ii[y][x] = ii[y-1][x] + i[y+y_start][x+x_start];
-        sii[y][x] = sii[y-1][x] + i[y+y_start][x+x_start]*i[y+y_start][x+x_start];
+      else{
+        sii[y][x] = sum_row_sq;
+        ii[y][x] = sum_row;
       }
     }
   }
-  for(x=0; x < FRAME_WIDTH; x++){
-    for(y = 0; y < FRAME_HEIGHT; y++){
-      if(x == 0){
-        ii[y][x] = ii[y][x];
-        sii[y][x] = i[y+y_start][x+x_start] * i[y+y_start][x+x_start];
-      }
-      else {
-        ii[y][x] = ii[y][x-1] + ii[y][x];
-        sii[y][x] = sii[y][x-1] + i[y+y_start][x+x_start]*i[y+y_start][x+x_start];
-      }
-    }
-  }
-
-  for(x=0; x < FRAME_WIDTH; x++){
-    for(y = 0; y < FRAME_HEIGHT; y++){
-      if(y>0) sii[y][x] = sii[y-1][x] + sii[y][x];
-    }
-  }
-
 }
 
 int64_t calcStddev(uint64_t sii[FRAME_HEIGHT][FRAME_WIDTH],

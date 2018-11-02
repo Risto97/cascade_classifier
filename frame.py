@@ -21,55 +21,36 @@ class FrameClass(object):
         self.frame_ii = np.delete(self.frame_ii, (0), axis=0)
         self.frame_ii = np.delete(self.frame_ii, (0), axis=1)
 
-
     def calcIntegral(self):
         self.frame_ii = np.zeros(self.frame_size, dtype='u4')
 
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if y == 0:
-                    self.frame_ii[y][x] = self.frame[y][x]
+        for y in range(self.frame_size[0]):
+            sum_row = 0
+            for x in range(self.frame_size[1]):
+                sum_row += self.frame[y][x]
                 if y > 0:
-                    self.frame_ii[y][
-                        x] = self.frame_ii[y - 1][x] + self.frame[y][x]
-
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if x == 0:
-                    self.frame_ii[y][x] = self.frame_ii[y][x]
+                    self.frame_ii[y][x] = sum_row + self.frame_ii[y - 1][x]
                 else:
-                    self.frame_ii[y][
-                        x] = self.frame_ii[y][x - 1] + self.frame_ii[y][x]
+                    self.frame_ii[y][x] = sum_row
 
         return self.frame_ii
 
     def calcSquareImage(self):
         self.frame_sii = np.zeros(self.frame_size, dtype='u8')
+        col_sum = [0]*self.frame_size[1]
 
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
+        for y in range(self.frame_size[0]):
+            row_sum = 0
+            for x in range(self.frame_size[1]):
+                product = np.uint64(self.frame[y][x]) * np.uint64(self.frame[y][x])
+                col_sum[x] += product
+                row_sum += product
                 if y == 0:
-                    self.frame_sii[y][x] = np.uint64(
-                        self.frame[y][x]) * np.uint64(self.frame[y][x])
-                if y > 0:
-                    self.frame_sii[y][
-                        x] = self.frame_sii[y - 1][x] + np.uint64(
-                            self.frame[y][x]) * np.uint64(self.frame[y][x])
-
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if x == 0:
-                    self.frame_sii[y][x] = np.uint64(
-                        self.frame[y][x]) * np.uint64(self.frame[y][x])
+                    self.frame_sii[y][x] = row_sum
                 else:
-                    self.frame_sii[y][
-                        x] = self.frame_sii[y][x - 1] + np.uint64(
-                            self.frame[y][x]) * np.uint64(self.frame[y][x])
-
-        for x in range(len(self.frame[0])):
-            for y in range(len(self.frame)):
-                if(y > 0):
-                    self.frame_sii[y][x] = self.frame_sii[y-1][x] + self.frame_sii[y][x]
+                    self.frame_sii[y][x] = col_sum[x]
+                    if x > 0:
+                        self.frame_sii[y][x] += self.frame_sii[y][x-1]
 
         return self.frame_sii
 
@@ -84,7 +65,7 @@ class FrameClass(object):
         sii[1][0] = self.frame_sii[feature_size[0]][0]
         sii[1][1] = self.frame_sii[feature_size[0]][feature_size[1]]
 
-        stddev =  sii[1][1] - sii[0][1] - sii[1][0] + sii[0][0]
+        stddev = sii[1][1] - sii[0][1] - sii[1][0] + sii[0][0]
         stddev = (stddev * feature_size[0] * feature_size[1])
         mean_sq = np.uint64(np.uint64(mean) * np.uint64(mean))
         stddev = stddev - mean_sq
@@ -103,7 +84,12 @@ if __name__ == "__main__":
 
     img = FrameClass()
     img.frame = cv2.imread(img_fn, 0)
-    img.frame = img.frame[0:25,0:25]
+    # img.frame = img.frame[0:5, 0:5]
+    # img.frame[0] = [5, 4, 8, 2, 1]
+    # img.frame[1] = [7, 3, 5, 9, 1]
+    # img.frame[2] = [3, 2, 7, 6, 4]
+    # img.frame[3] = [4, 5, 1, 2, 9]
+    # img.frame[4] = [9, 7, 3, 7, 2]
     img.frame_size = img.frame.shape
 
     start_time = time.time()
@@ -114,7 +100,6 @@ if __name__ == "__main__":
     img.calcSquareImage()
     print("--- Square Integral Image Calc --------- %s ms ---" %
           (time.time() * 1000 - start_time * 1000))
-    start_time = time.time()
     stddev = img.calcStddev()
     print("--- Stddev calc  ------------- --------- %s ms ---" %
           (time.time() * 1000 - start_time * 1000))
