@@ -39,12 +39,12 @@ extern "C" int detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
 
   while(img_height > FRAME_HEIGHT && img_width > FRAME_WIDTH){
     for(y = 0; y < img_height-FRAME_HEIGHT-1; y+=1){
-      for(x=0; x < img_width-FRAME_WIDTH-1; x +=1){
+      for(x=0; x < img_width-FRAME_WIDTH-1; x +=2){
         calcIntegralImages(img_scaled, x, y, img_ii, img_sii);
         stddev = calcStddev(img_sii, img_ii);
         result = detectFrame(img_ii, stddev);
         if(result == 0){
-          x = x+3;
+          x = x+10;
         }
         if(result == stageNum){
           subwindows[number_of_boxes*4]   = int(x*factor);
@@ -61,8 +61,6 @@ extern "C" int detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
     img_width = src_width / factor;
     imageScaler(img_orig, img_scaled, src_height, src_width, factor);
   }
-  std::cout << "Done\n";
-  // subwindows = windows;
   return number_of_boxes;
 }
 

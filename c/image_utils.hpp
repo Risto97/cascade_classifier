@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 // #include "slika.hpp"
-const int IMG_HEIGHT = 512;
-const int IMG_WIDTH = 512;
+const int IMG_HEIGHT = 1024;
+const int IMG_WIDTH = 1024;
 const int FRAME_WIDTH = 25;
 const int FRAME_HEIGHT = 25;
 
