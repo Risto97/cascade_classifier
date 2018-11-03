@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include "image_utils.hpp"
 
+extern "C" void detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
+                       int src_height,
+                       int src_width,
+                       float scaleFactor
+                       );
 
 int detectFrame(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
            int64_t stddev);

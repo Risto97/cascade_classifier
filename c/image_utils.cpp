@@ -4,8 +4,8 @@
 #include "image_utils.hpp"
 #include <math.h>
 
-void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
-                 uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH],
+void imageScaler(uint16_t img_orig[IMG_HEIGHT][IMG_WIDTH],
+                 uint16_t img_scaled[IMG_HEIGHT][IMG_WIDTH],
                  uint16_t src_height,
                  uint16_t src_width,
                  float factor){
@@ -28,7 +28,7 @@ void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
     }
   }
 }
-void calcIntegralImages(uint8_t i[IMG_HEIGHT][IMG_WIDTH],
+void calcIntegralImages(uint16_t i[IMG_HEIGHT][IMG_WIDTH],
                         int x_start,
                         int y_start,
                         uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
