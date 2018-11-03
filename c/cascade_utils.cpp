@@ -6,9 +6,10 @@
 #include "cascade.hpp"
 
 
-extern "C" void detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
+extern "C" int detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
                        int src_height,
                        int src_width,
+                       uint16_t subwindows[1000],
                        float scaleFactor
                        ){
 
@@ -19,6 +20,9 @@ extern "C" void detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
   uint16_t img_orig[IMG_HEIGHT][IMG_WIDTH];
   uint64_t img_ii[FRAME_HEIGHT][FRAME_WIDTH];
   uint64_t img_sii[FRAME_HEIGHT][FRAME_WIDTH];
+  uint16_t windows[1000];
+  uint16_t number_of_boxes = 0;
+
   int img_height = src_height;
   int img_width = src_width;
   float factor = 1;
@@ -43,7 +47,12 @@ extern "C" void detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
           x = x+3;
         }
         if(result == stageNum){
-          std::cout <<  int(x*factor) << ", " << int(y*factor) << ", " << int(24*factor) << ", " << int(24*factor) << "\n";
+          subwindows[number_of_boxes*4]   = int(x*factor);
+          subwindows[number_of_boxes*4+1] = int(y*factor);
+          subwindows[number_of_boxes*4+2] = int((FRAME_WIDTH-1)*factor);
+          subwindows[number_of_boxes*4+3] = int((FRAME_HEIGHT-1)*factor);
+          number_of_boxes++;
+          // std::cout <<  int(x*factor) << ", " << int(y*factor) << ", " << int(24*factor) << ", " << int(24*factor) << "\n";
         }
       }
     }
@@ -53,6 +62,8 @@ extern "C" void detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
     imageScaler(img_orig, img_scaled, src_height, src_width, factor);
   }
   std::cout << "Done\n";
+  // subwindows = windows;
+  return number_of_boxes;
 }
 
 int detectFrame(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
