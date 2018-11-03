@@ -6,21 +6,20 @@
 #include "cascade.hpp"
 
 
-extern "C" int detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
-                       int src_height,
-                       int src_width,
-                       uint16_t subwindows[1000],
-                       float scaleFactor
-                       ){
+extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
+                      int src_height,
+                      int src_width,
+                      uint16_t subwindows[1000],
+                      float scaleFactor
+                      ){
 
   int x = 0;
   int y = 0;
 
-  uint16_t img_scaled[IMG_HEIGHT][IMG_WIDTH];
-  uint16_t img_orig[IMG_HEIGHT][IMG_WIDTH];
+  uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH];
+  uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH];
   uint64_t img_ii[FRAME_HEIGHT][FRAME_WIDTH];
   uint64_t img_sii[FRAME_HEIGHT][FRAME_WIDTH];
-  uint16_t windows[1000];
   uint16_t number_of_boxes = 0;
 
   int img_height = src_height;
@@ -52,7 +51,6 @@ extern "C" int detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
           subwindows[number_of_boxes*4+2] = int((FRAME_WIDTH-1)*factor);
           subwindows[number_of_boxes*4+3] = int((FRAME_HEIGHT-1)*factor);
           number_of_boxes++;
-          // std::cout <<  int(x*factor) << ", " << int(y*factor) << ", " << int(24*factor) << ", " << int(24*factor) << "\n";
         }
       }
     }

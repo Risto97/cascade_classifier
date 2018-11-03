@@ -12,12 +12,12 @@ lib = ctl.load_library(libname, libdir)
 img_fn = '../datasets/lena.pgm'
 img = cv2.imread(img_fn, 0)
 img_clr = cv2.imread(img_fn)
-img = img.astype('u2')
+img = img.astype('u1')
 
 img_num = 1
 detect = lib.detect
 detect.argtypes = [
-    ctl.ndpointer(np.uint16, flags='aligned, c_contiguous'),
+    ctl.ndpointer(np.uint8, flags='aligned, c_contiguous'),
     ctypes.c_int,
     ctypes.c_int,
     ctl.ndpointer(np.uint16, flags='aligned, c_contiguous'),

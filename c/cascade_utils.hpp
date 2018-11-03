@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "image_utils.hpp"
 
-extern "C" int detect(uint16_t img[IMG_HEIGHT*IMG_WIDTH],
+extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
                        int src_height,
                        int src_width,
                        uint16_t subwindows[1000],
