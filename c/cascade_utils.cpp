@@ -6,19 +6,19 @@
 #include "cascade.hpp"
 
 
-int detect(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
+int detectFrame(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
            int64_t stddev){
-
+  unsigned int stage_num = 0;
   unsigned int feature_start = 0;
   int result = 0;
 
-  for(unsigned int stage_num = 0; stage_num < stageNum; stage_num++){
+  for(stage_num = 0; stage_num < stageNum; stage_num++){
     result = stageRes(ii, stddev, feature_start, stage_num);
-    if(result == -1) return -1;
+    if(result == -1) return stage_num;
 
     feature_start += stagesFeatureCount[stage_num];
   }
-  return 1;
+  return stage_num;
 }
 
 int stageRes(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],

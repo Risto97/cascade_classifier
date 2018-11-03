@@ -5,7 +5,7 @@
 #include "image_utils.hpp"
 
 
-int detect(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
+int detectFrame(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
            int64_t stddev);
 
 int stageRes(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],

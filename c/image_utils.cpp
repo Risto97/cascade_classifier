@@ -6,13 +6,15 @@
 
 void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
                  uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH],
+                 uint16_t src_height,
+                 uint16_t src_width,
                  float factor){
 
   uint32_t x_ratio;
   uint32_t y_ratio;
 
-  uint16_t w1 = IMG_WIDTH;
-  uint16_t h1 = IMG_HEIGHT;
+  uint16_t w1 = src_width;
+  uint16_t h1 = src_height;
   uint16_t w2 = w1 / factor;
   uint16_t h2 = h1 / factor;
 
