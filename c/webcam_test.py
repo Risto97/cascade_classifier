@@ -12,7 +12,7 @@ lib = ctl.load_library(libname, libdir)
 
 detect = lib.detect
 detect.argtypes = [
-    ctl.ndpointer(np.uint16, flags='aligned, c_contiguous'),
+    ctl.ndpointer(np.uint8, flags='aligned, c_contiguous'),
     ctypes.c_int,
     ctypes.c_int,
     ctl.ndpointer(np.uint16, flags='aligned, c_contiguous'),
@@ -38,7 +38,7 @@ while(True):
 
     ret, frame = cap.read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = gray.astype('u2')
+    gray = gray.astype('u1')
 
     start_time = time.time()
     res_num = detect(gray, gray.shape[0], gray.shape[1], res, 1.2)
