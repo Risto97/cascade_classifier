@@ -56,8 +56,7 @@ for window in subwindow:
         (window['x'] + window['width'], window['y'] + window['height']),
         (0, 255, 0), 2)
 
-print(
-    "--- Time --------- %s ms ---" % (time.time() * 1000 - start_time * 1000))
+print("--- Time --------- %s ms ---" % (time.time() * 1000 - start_time * 1000))
 cv2.imshow('img', img.img_marked)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

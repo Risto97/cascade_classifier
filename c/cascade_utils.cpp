@@ -6,8 +6,64 @@
 #include "cascade.hpp"
 
 
+extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
+                      int src_height,
+                      int src_width,
+                      uint16_t subwindows[1000],
+                      float scaleFactor
+                      ){
+
+  int x = 0;
+  int y = 0;
+
+  uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH];
+  uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH];
+  uint64_t img_ii[FRAME_HEIGHT][FRAME_WIDTH];
+  uint64_t img_sii[FRAME_HEIGHT][FRAME_WIDTH];
+  uint16_t number_of_boxes = 0;
+
+  int img_height = src_height;
+  int img_width = src_width;
+  float factor = 1;
+  int64_t stddev = 0;
+  int result = 0;
+
+  for(int i = 0; i < src_height; i++){
+    for(int j = 0; j < src_width; j++){
+      img_scaled[i][j] = img[j+i*src_width];
+      img_orig[i][j] = img[j+i*src_width];
+    }
+  }
+
+
+  while(img_height > FRAME_HEIGHT && img_width > FRAME_WIDTH){
+    for(y = 0; y < img_height-FRAME_HEIGHT-1; y+=1){
+      for(x=0; x < img_width-FRAME_WIDTH-1; x +=2){
+        calcIntegralImages(img_scaled, x, y, img_ii, img_sii);
+        stddev = calcStddev(img_sii, img_ii);
+        result = detectFrame(img_ii, stddev);
+        if(result == 0){
+          x = x+10;
+        }
+        if(result == stageNum){
+          subwindows[number_of_boxes*4]   = int(x*factor);
+          subwindows[number_of_boxes*4+1] = int(y*factor);
+          subwindows[number_of_boxes*4+2] = int((FRAME_WIDTH-1)*factor);
+          subwindows[number_of_boxes*4+3] = int((FRAME_HEIGHT-1)*factor);
+          number_of_boxes++;
+        }
+      }
+    }
+    factor = factor * scaleFactor;
+    img_height = src_height / factor;
+    img_width = src_width / factor;
+    imageScaler(img_orig, img_scaled, src_height, src_width, factor);
+  }
+  return number_of_boxes;
+}
+
 int detectFrame(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
-           int64_t stddev){
+                int64_t stddev){
   unsigned int stage_num = 0;
   unsigned int feature_start = 0;
   int result = 0;

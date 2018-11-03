@@ -214,7 +214,7 @@ if __name__ == "__main__":
     import xmltodict
 
     fn = 'c/cascade.hpp'
-    xml_file = r"haarcascade_frontalface_default.xml"
+    xml_file = r"models/haarcascade_frontalface_default.xml"
     with open(xml_file) as fd:
         doc = xmltodict.parse(fd.read())
 
