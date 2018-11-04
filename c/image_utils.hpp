@@ -2,11 +2,10 @@
 #define IMAGE_UTILS_HPP
 
 #include <stdint.h>
+#include "cascade.hpp"
 // #include "slika.hpp"
 const int IMG_HEIGHT = 1024;
 const int IMG_WIDTH = 1024;
-const int FRAME_WIDTH = 25;
-const int FRAME_HEIGHT = 25;
 
 void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
                  uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH],
