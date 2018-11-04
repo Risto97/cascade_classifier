@@ -27,9 +27,9 @@ class CascadeClass(object):
         print(f"const unsigned int stageNum = {self.stageNum};", file=f)
         print(
             f"const unsigned int maxWeakCount = {self.maxWeakCount};", file=f)
-        print(f"const unsigned int feature_h = {self.featureSize[0]};", file=f)
+        print(f"const unsigned int FRAME_HEIGHT = {self.featureSize[0]+1};", file=f)
         print(
-            f"const unsigned int feature_w = {self.featureSize[1]};\n", file=f)
+            f"const unsigned int FRAME_WIDTH = {self.featureSize[1]+1};\n", file=f)
 
         print(
             f"const unsigned int stagesFeatureCount[{self.stageNum}]=",
