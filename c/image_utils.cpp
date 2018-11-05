@@ -1,7 +1,8 @@
 #include <stdint.h>
-#include <iostream>
+// #include <iostream>
 // #include "slika.hpp"
 #include "image_utils.hpp"
+#include "cascade.hpp"
 #include <math.h>
 
 void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
