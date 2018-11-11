@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from math import *
 
 
 class ImageClass(object):
@@ -74,13 +75,52 @@ class ImageClass(object):
 
         print(f"\n#endif", file=f)
 
+    def dumpVerilogROM(self, fn):
+        f = open(fn, "w")
+
+        img_width = self.img_size[1]
+        img_height = self.img_size[0]
+        addr_w = ceil(log(img_height*img_width, 2))
+        data_w = self.img[0][0].nbytes*8
+        hex_w = data_w//4
+
+        print(f"module bram_rom", file=f)
+        print(f"  #(", file=f)
+        print(f"     parameter W_DATA = {data_w},", file=f)
+        print(f"     parameter W_ADDR = {addr_w}", file=f)
+        print(f"     )", file=f)
+        print(f"    (", file=f)
+        print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1,\n", file=f)
+        print(f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2", file=f)
+        print(f"     );", file=f)
+
+        print(f"\n     (* rom_style = \"block\" *)\n", file=f)
+
+        for i in range(1,3):
+            print(f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})",file=f)
+
+            for y in range(self.img_size[0]):
+                for x in range(self.img_size[1]):
+                    addr = y*(self.img_size[1]) + x
+                    addr_str = format(addr,f'0{addr_w}b')
+                    str = format(self.img[y][x],f'0{hex_w}x')
+                    print(f'               {addr_w}\'b{addr_str}: data{i} <= {data_w}\'h{str};', file=f)
+
+            print(f"               default: data{i} <= 0;", file=f)
+            print(f"           endcase", file=f)
+            print(f"        end", file=f)
+
+        print(f"\nendmodule: bram_rom", file=f)
+
+        pass
 
 if __name__ == "__main__":
-    img_fn = 'datasets/proba.pgm'
+    img_fn = 'datasets/1.pgm'
     img = ImageClass()
     img.loadImage(img_fn)
 
-    img.dumpArrayC("c/slika.hpp")
+    # img.dumpArrayC("c/slika.hpp")
+    img.dumpVerilogROM("rtl/bram_rom/bram_rom.sv")
 
     # import time
     # start_time = time.time()
