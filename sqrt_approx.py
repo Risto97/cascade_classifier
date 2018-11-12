@@ -3,11 +3,19 @@ import math
 class SqrtClass(object):
     def __init__(self):
         self.w_din = 31
-        self.depth = 255
+        self.depth = 256
 
     @property
     def step(self):
         return 2**self.w_din // self.depth
+
+    @property
+    def w_data(self):
+        return math.ceil(math.log(math.sqrt(2**self.w_din),2))
+
+    @property
+    def w_addr(self):
+        return math.ceil(math.log(self.depth,2))
 
     @property
     def lut(self):
@@ -26,7 +34,6 @@ class SqrtClass(object):
         if(sqrt_lut == 0):
             sqrt_lut = 1
         error = abs((sqrt_lut - math.sqrt(num)) / sqrt_lut * 100)
-        print(math.sqrt(num))
         return sqrt_lut, error
 
     def dumpC(self, fn):
@@ -48,11 +55,48 @@ class SqrtClass(object):
 
         print(f"\n#endif", file=f)
 
+    def dumpVerilogROM(self, fn):
+        f = open(fn, "w")
+
+        hex_w = self.w_data//4
+
+        print(f"module sqrt_rom", file=f)
+        print(f"  #(", file=f)
+        print(f"     parameter W_DATA = {self.w_data},", file=f)
+        print(f"     parameter W_ADDR = {self.w_addr}", file=f)
+        print(f"     )", file=f)
+        print(f"    (", file=f)
+        print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n", file=f)
+        print(f"     );", file=f)
+
+        print(f"\n     (* rom_style = \"block\" *)\n", file=f)
+
+        print(f"     always_ff @(posedge clk)\n        begin\n           if(en1)\n             case(addr1)",file=f)
+
+        for i in range(len(self.lut)):
+            addr = i
+            addr_str = format(addr,f'0{self.w_addr}b')
+            str = format(self.lut[i],f'0{hex_w}x')
+            print(f'               {self.w_addr}\'b{addr_str}: data1 <= {self.w_data}\'h{str};', file=f)
+
+        print(f"               default: data1 <= 0;", file=f)
+        print(f"           endcase", file=f)
+        print(f"        end", file=f)
+
+        print(f"\nendmodule: sqrt_rom", file=f)
+
+        pass
+
+
 test = [632423816, 55374038]
 
 sqrt = SqrtClass()
 sqrt.w_din = 31
 sqrt.depth = 256
+print(sqrt.w_data)
+print(sqrt.w_addr)
+print(sqrt.step)
 
 sqrt.dumpC("c/sqrt.hpp")
-print(sqrt.getSqrt(test[0]))
+sqrt.dumpVerilogROM("rtl/top/sqrt_rom.sv")
+# print(sqrt.getSqrt(test[0]))
