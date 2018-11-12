@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = --std=gnu++11 -Ofast
 SRCS = cascade_utils.cpp image_utils.cpp
-HDRS = cascade.hpp cascade_utils.hpp image_utils.hpp
+HDRS = cascade.hpp cascade_utils.hpp image_utils.hpp sqrt.hpp
 SHROBJ = cascade.so
 
 $(SHROBJ):$(SRCS)

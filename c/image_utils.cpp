@@ -1,9 +1,10 @@
 #include <stdint.h>
-// #include <iostream>
+#include <iostream>
 // #include "slika.hpp"
 #include "image_utils.hpp"
 #include "cascade.hpp"
-#include <math.h>
+// #include <math.h>
+#include "sqrt.hpp"
 
 void imageScaler(uint8_t img_orig[IMG_HEIGHT][IMG_WIDTH],
                  uint8_t img_scaled[IMG_HEIGHT][IMG_WIDTH],
@@ -68,25 +69,32 @@ void calcIntegralImages(uint8_t i[IMG_HEIGHT][IMG_WIDTH],
   }
 }
 
+uint32_t getSqrt(uint64_t num){
+  uint32_t addr = num / STEP;
+  addr = int(addr);
+  return sqrt_lut[addr];
+}
+
 int64_t calcStddev(uint64_t sii[FRAME_HEIGHT][FRAME_WIDTH],
-                uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH]){
+                   uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH]){
 
   uint64_t sii_buff[2][2];
   int64_t stddev = 0;
   int64_t mean = 0;
 
-  mean = ii[0][0] + ii[FRAME_HEIGHT-1][FRAME_WIDTH-1] - ii[0][FRAME_WIDTH-1] - ii[FRAME_HEIGHT-1][0];
+  mean = ii[0][0] + ii[FRAME_HEIGHT-2][FRAME_WIDTH-2] - ii[0][FRAME_WIDTH-2] - ii[FRAME_HEIGHT-2][0];
   sii_buff[0][0] = sii[0][0];
-  sii_buff[0][1] = sii[0][FRAME_WIDTH-1];
-  sii_buff[1][0] = sii[FRAME_HEIGHT-1][0];
-  sii_buff[1][1] = sii[FRAME_HEIGHT-1][FRAME_WIDTH-1];
+  sii_buff[0][1] = sii[0][FRAME_WIDTH-2];
+  sii_buff[1][0] = sii[FRAME_HEIGHT-2][0];
+  sii_buff[1][1] = sii[FRAME_HEIGHT-2][FRAME_WIDTH-2];
 
   stddev = sii_buff[1][1] + sii_buff[0][0] - sii_buff[0][1] - sii_buff[1][0];
-  stddev = (stddev * (FRAME_WIDTH-1)*(FRAME_HEIGHT-1));
+
+  stddev = (stddev * (FRAME_WIDTH-2)*(FRAME_HEIGHT-2));
 
   stddev = stddev - (mean*mean);
 
-  if(stddev > 0) stddev = sqrt(stddev);
+  if(stddev > 0) stddev = getSqrt(stddev);
   else stddev = 1;
 
   return stddev;
