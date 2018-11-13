@@ -23,42 +23,47 @@ module sweeper
     output [W_Y-1:0] y
     );
 
+   logic             handshake;
+   logic             addr_valid_reg, addr_valid_next;
+   logic             cfg_ready_reg, cfg_ready_next;
+
    logic [$clog2(SWEEP_X)-1:0] x_cnt_reg, x_cnt_next;
    logic [$clog2(SWEEP_Y)-1:0] y_cnt_reg, y_cnt_next;
-   logic [W_X-1:0]             x_reg, x_next;
-   logic [W_Y-1:0]             y_reg, y_next;
-   logic                       config_ready_reg, config_ready_next;
-   logic                       addr_valid_reg;
-   logic                       handshake;
 
-   assign handshake = cfg_valid & addr_ready;
-
-   assign x_next = x_cnt_reg + x_start;
-   assign y_next = y_cnt_reg + y_start;
-   assign x = x_reg;
-   assign y = y_reg;
-
-   assign cfg_ready = config_ready_reg;
-
+   assign handshake = cfg_valid & addr_ready & addr_valid;
    assign addr_valid = addr_valid_reg;
-   // assign addr_valid = cfg_valid;
+
+   assign x = x_cnt_reg + x_start;
+   assign y = y_cnt_reg + y_start;
+   assign cfg_ready = cfg_ready_reg;
 
    always_comb
      begin
-        config_ready_next = 0;
+        x_cnt_next = x_cnt_reg+1;
+        y_cnt_next = y_cnt_reg;
+        cfg_ready_next = 1'b0;
 
-        x_cnt_next = x_cnt_reg + 1;
-        if(x_cnt_next == SWEEP_X)
+        if(x_cnt_reg == SWEEP_X-1)
           begin
-             y_cnt_next = y_cnt_reg + STRIDE_Y;
-             x_cnt_next = x_start;
+             x_cnt_next = 0;
+             y_cnt_next = y_cnt_reg+1;
+          end
+        if(y_cnt_reg == SWEEP_Y-1 && x_cnt_reg == SWEEP_X-2)
+          begin
+             cfg_ready_next = 1'b1;
           end
         if(y_cnt_next == SWEEP_Y)
           begin
-             y_cnt_next = y_start;
-             config_ready_next = 1;
+             x_cnt_next = 0;
+             y_cnt_next = 0;
           end
      end
+
+   always_ff @(posedge clk)
+     if(rst)
+       addr_valid_reg <= 0;
+     else
+       addr_valid_reg <= 1;
 
    always_ff @(posedge clk)
      begin
@@ -66,22 +71,15 @@ module sweeper
           begin
              x_cnt_reg <= 0;
              y_cnt_reg <= 0;
-             config_ready_reg <= 0;
-             addr_valid_reg <= 0;
-             x_reg <= 0;
-             y_reg <= 0;
+             cfg_ready_reg <= 0;
           end
         else if(handshake)
           begin
+             cfg_ready_reg <= cfg_ready_next;
              x_cnt_reg <= x_cnt_next;
              y_cnt_reg <= y_cnt_next;
-             config_ready_reg <= config_ready_next;
-             addr_valid_reg <= 1'b1;
-             x_reg <= x_next;
-             y_reg <= y_next;
           end
      end
 
-   // if(SWEEP_Y % STRIDE_Y != 0) $finish;
 
 endmodule: sweeper

@@ -40,7 +40,7 @@ int main(int argc, char **argv, char **env){
           top->ii_addr_valid = 1;
           top->ii_addr_data = cnt;
           cnt++;
-          if(cnt == 50)
+          if(cnt % 55 == 0 && cnt > 0)
             top->ii_dout_ready = 1;
         }
       }

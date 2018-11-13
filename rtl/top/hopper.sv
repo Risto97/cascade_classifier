@@ -50,7 +50,7 @@ module hopper
      if(rst)
        hop_valid_reg <= 0;
      else
-       hop_valid_reg <= hop_valid_next;
+       hop_valid_reg <= 1'b1;
 
    always_ff @(posedge clk)
      begin

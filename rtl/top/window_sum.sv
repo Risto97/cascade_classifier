@@ -44,10 +44,16 @@ module window_sum
               eot_cnt_next = 0;
            end
 
-        if((data_cnt_reg == 1 & eot_cnt_reg == 0) | (data_cnt_reg == WINDOW_WIDTH & eot_cnt_reg == WINDOW_HEIGHT-1) )
+         if(data_cnt_reg  == 1 && eot_cnt_reg == 0)
+          begin
+             din_accum_next = din_data;
+          end
+
+        if(data_cnt_reg == WINDOW_WIDTH & eot_cnt_reg == WINDOW_WIDTH-1)
           begin
              din_accum_next = din_accum_reg + din_data;
           end
+
         if((data_cnt_reg == WINDOW_WIDTH & eot_cnt_reg == 0) | (data_cnt_reg == 1 & eot_cnt_reg == WINDOW_HEIGHT-1))
           begin
              din_accum_next = din_accum_reg - din_data;
@@ -69,6 +75,13 @@ module window_sum
         else if(din_eot[0])
           eot_cnt_reg <= eot_cnt_next;
      end
+   always_ff @(posedge clk)
+     begin
+        if(rst | window_sum_valid)
+          din_accum_reg <= 0;
+        else if(din_valid)
+          din_accum_reg <= din_accum_next;
+     end
 
    always_ff @(posedge clk)
      begin
@@ -76,13 +89,11 @@ module window_sum
           begin
              din_ready_reg <= 0;
              data_cnt_reg <= 0;
-             din_accum_reg <= 0;
           end
         else if(din_valid)
           begin
              data_cnt_reg <= data_cnt_next;
              din_ready_reg <= din_valid;
-             din_accum_reg <= din_accum_next;
           end
      end
 
