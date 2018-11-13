@@ -22,7 +22,7 @@ module eot_gen
    logic [$clog2(FEATURE_HEIGHT)-1:0] y_cnt_reg, y_cnt_next;
 
    logic                              handshake;
-   logic [1:0]                        eot_o, eot_next;
+   logic [1:0]                        eot_o;
 
    assign dout_valid = din_valid;
    assign handshake = din_valid & dout_ready;

@@ -34,6 +34,7 @@ module window_sum
      begin
         data_cnt_next = data_cnt_reg+1;
         eot_cnt_next = eot_cnt_reg +1;
+        din_accum_next = din_accum_reg;
 
         if(data_cnt_reg == WINDOW_WIDTH)
           begin
@@ -77,7 +78,7 @@ module window_sum
      end
    always_ff @(posedge clk)
      begin
-        if(rst | window_sum_valid)
+        if(rst)
           din_accum_reg <= 0;
         else if(din_valid)
           din_accum_reg <= din_accum_next;

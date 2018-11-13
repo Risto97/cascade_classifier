@@ -9,19 +9,12 @@ module top
     localparam DATA_MAX = 2**W_DATA-1,
     localparam W_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX),
     localparam W_SII = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX*DATA_MAX),
-    localparam W_STDDEV = $clog2(2**W_SII*(FEATURE_HEIGHT-1)*(FEATURE_WIDTH-1))
+    localparam W_STDDEV = $clog2(2**W_SII*(FEATURE_HEIGHT-1)*(FEATURE_WIDTH-1)),
+    localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT)
     )
    (
     input                 clk,
     input                 rst,
-
-    input                 ii_addr_valid,
-    output                ii_addr_ready,
-    input [9:0]           ii_addr_data,
-
-    output                ii_dout_valid,
-    input                 ii_dout_ready,
-    output [W_II-1:0]     ii_dout_data,
 
     output                stddev_valid,
     input                 stddev_ready,
@@ -53,6 +46,14 @@ module top
    logic               sii_ready;
    logic [W_SII-1:0]   sii_data;
    logic [1:0]         sii_eot;
+
+   logic               ii_dout_valid;
+   logic               ii_dout_ready;
+   logic [W_II-1:0]    ii_dout_data;
+
+   logic               ii_addr_valid;
+   logic               ii_addr_ready;
+   logic [W_ADDR_II-1:0] ii_addr_data;
 
 
 
@@ -129,7 +130,9 @@ module top
    stddev #(.W_SII(W_SII),
             .W_II(W_II),
             .WINDOW_HEIGHT(FEATURE_HEIGHT),
-            .WINDOW_WIDTH(FEATURE_WIDTH))
+            .WINDOW_WIDTH(FEATURE_WIDTH),
+            .W_SQRT(16),
+            .SQRT_DEPTH(256))
    stddev1(
            .clk(clk),
            .rst(rst),
@@ -163,5 +166,18 @@ module top
                    .dout_ready(ii_dout_ready),
                    .dout_data(ii_dout_data)
                    );
+
+   classifier #(.W_DATA(W_II),
+                .W_ADDR(W_ADDR_II))
+   classifier_i(
+                .clk(clk),
+                .rst(rst),
+                .din_valid(ii_dout_valid),
+                .din_data(ii_dout_data),
+                .din_ready(ii_dout_ready),
+                .addr_valid(ii_addr_valid),
+                .addr_ready(ii_addr_ready),
+                .addr_data(ii_addr_data)
+                );
 
 endmodule: top

@@ -4,6 +4,9 @@ module stddev
     parameter W_II = 18,
     parameter WINDOW_HEIGHT = 24,
     parameter WINDOW_WIDTH = 24,
+    parameter W_SQRT = 16,
+    parameter SQRT_DEPTH = 256,
+    localparam W_ADDR_SQRT = $clog2(SQRT_DEPTH),
     localparam W_STDDEV = $clog2(2**W_SII*(WINDOW_HEIGHT-1)*(WINDOW_WIDTH-1))
     )
    (
@@ -35,7 +38,7 @@ module stddev
 
    logic [W_STDDEV-1:0] stddev_tmp;
    logic [W_STDDEV-1:0] mean_tmp;
-   logic [7:0]          sqrt_addr;
+   logic [W_ADDR_SQRT-1:0] sqrt_addr;
 
    assign stddev_tmp = sii_sum_data_reg * (WINDOW_HEIGHT-1)*(WINDOW_WIDTH-1);
    assign mean_tmp = (ii_sum_data_reg * ii_sum_data_reg);
@@ -65,8 +68,8 @@ module stddev
 
    sqrt_mem
      #(
-       .W_DATA(16),
-       .W_ADDR(8)
+       .W_DATA(W_SQRT),
+       .W_ADDR(W_ADDR_SQRT)
        )
    sqrt_mem_i(
               .clk(clk),

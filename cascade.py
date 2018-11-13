@@ -1,3 +1,5 @@
+import math
+
 class CascadeClass(object):
     def __init__(self):
         self.stageNum = 0
@@ -129,6 +131,92 @@ class CascadeClass(object):
 
         print(f"\n#endif", file=f)
 
+    def dumpRectVerilogROM(self, directory):
+        for r in range(3):
+            fn_rect = directory + f"rect{r}_rom.sv"
+            fn_weights = directory + f"weights{r}_rom.sv"
+            f_rect = open(fn_rect, "w")
+            f_weights = open(fn_weights, "w")
+            files = [f_rect, f_weights]
+
+            dual_port = False
+            if dual_port is True:
+                ports = 2
+            else:
+                ports = 1
+
+            max_feature_size = max(self.featureSize)
+            w_addr_l = [math.ceil(math.log(self.featuresNum*4, 2)), math.ceil(math.log(self.featuresNum, 2))]
+            w_data_l = [math.ceil(math.log(max_feature_size, 2)), 3]
+            w_hex_l = [math.ceil(w_data_l[0]/4), 0]
+
+            print(f"module rect{r}_rom", file=f_rect)
+            print(f"module weights{r}_rom", file=f_weights)
+            for enum, (f, w_addr, w_data, w_hex) in enumerate(zip(files, w_addr_l, w_data_l, w_hex_l)):
+                print(f"  #(", file=f)
+                print(f"     parameter W_DATA = {w_data},", file=f)
+                print(f"     parameter W_ADDR = {w_addr}", file=f)
+                print(f"     )", file=f)
+                print(f"    (", file=f)
+                if(dual_port == True):
+                    print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1,\n", file=f)
+                    print(f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2", file=f)
+                else:
+                    print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n", file=f)
+
+                print(f"     );", file=f)
+
+                print(f"\n     (* rom_style = \"block\" *)\n", file=f)
+
+                for i in range(1, ports+1):
+                    print(f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})",file=f)
+
+                    cnt = 0
+                    for stage in self.stages:
+                        for feature in stage.features:
+                            try:
+                                A = [feature.rects[r].A['x'], feature.rects[r].A['y']]
+                                D = [feature.rects[r].D['x'], feature.rects[r].D['y']]
+                                weight = feature.rects[r].weight
+                                if(A[0] > D[0] | A[1] > D[1]):
+                                    print("A is not top left corner, or D is not bottom right corner")
+                            except:
+                                weight = 0
+                                A = [0, 0]
+                                D = [0, 0]
+
+                            weight = weight//4096
+                            width = D[0] - A[0]
+                            height = D[1] - A[1]
+
+                            item = []
+                            if enum == 0:
+                                item = A
+                                item.append(width)
+                                item.append(height)
+                            else:
+                                item.append(weight)
+
+                            for data in enumerate(item):
+                                addr = cnt*len(item) + data[0]
+                                addr_str = format(addr,f'0{w_addr}b')
+                                if(data[1] < 0):
+                                    sign = "-"
+                                else:
+                                    sign = ""
+                                data_str = format(abs(data[1]),f'0{w_hex}x')
+                                print(f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};', file=f)
+
+                            cnt += 1
+
+                    print(f"               default: data{i} <= 0;", file=f)
+                    print(f"           endcase", file=f)
+                    print(f"        end", file=f)
+
+            print(f"\nendmodule: rect{r}_rom", file=f_rect)
+            print(f"\nendmodule: weights{r}_rom", file=f_weights)
+        pass
+
 
     @property
     def featuresNum(self):
@@ -220,4 +308,6 @@ if __name__ == "__main__":
 
     cascade = createCascade(doc)
 
-    cascade.dumpCpp(fn)
+    cascade.dumpRectVerilogROM("rtl/top/")
+
+    # cascade.dumpCpp(fn)

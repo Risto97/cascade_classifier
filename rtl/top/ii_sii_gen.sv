@@ -23,40 +23,20 @@ module ii_sii_gen
     output [1:0]       sii_eot
     );
 
-   logic [16:0]        squared_data;
+   logic [2*W_DATA-1:0] squared_data;
 
-   logic [W_DATA-1:0]  ii_din_data;
-   logic               ii_din_valid;
-   logic               ii_din_ready;
-   logic [1:0]         ii_din_eot;
+   logic [W_DATA-1:0]   ii_din_data;
+   logic                ii_din_valid;
+   logic                ii_din_ready;
+   logic [1:0]          ii_din_eot;
 
-   logic               sii_din_valid;
-   logic               sii_din_ready;
-   logic [1:0]         sii_din_eot;
+   logic                sii_din_valid;
+   logic                sii_din_ready;
+   logic [1:0]          sii_din_eot;
 
-   logic [W_DATA-1:0]  dout2_bc_data;
-
-   logic [W_DATA-1:0]  din_data_reg;
-   logic               din_valid_reg;
-   logic               din_ready_reg;
-   logic [1:0]         din_eot_reg;
-
+   logic [W_DATA-1:0]   dout2_bc_data;
 
    assign squared_data = dout2_bc_data * dout2_bc_data;
-
-   // dreg #(.W_DATA(8))
-   // dreg_i(
-   //        .clk(clk),
-   //        .rst(rst),
-   //        .din_valid(din_valid),
-   //        .din_ready(din_ready),
-   //        .din_data(din_data),
-   //        .din_eot(din_eot),
-   //        .dout_valid(din_valid_reg),
-   //        .dout_ready(din_ready_reg),
-   //        .dout_data(din_data_reg),
-   //        .dout_eot(din_eot_reg)
-   //        );
 
    broadcast #(.W_DATA(W_DATA))
    bc(

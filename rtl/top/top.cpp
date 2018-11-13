@@ -33,16 +33,17 @@ int main(int argc, char **argv, char **env){
     for (clk=0; clk<2; clk++){
       if(i>3 && clk == 1){
 
-        top->ii_dout_ready = 0;
+        // top->ii_dout_ready = 0;
         top->stddev_ready = 1;
+        // top->ii_addr_valid = 1;
 
-        if(top->ii_addr_ready){
-          top->ii_addr_valid = 1;
-          top->ii_addr_data = cnt;
-          cnt++;
-          if(cnt % 55 == 0 && cnt > 0)
-            top->ii_dout_ready = 1;
-        }
+        // if(top->ii_addr_ready){
+          // top->ii_addr_valid = 1;
+          // top->ii_addr_data = cnt;
+          // cnt++;
+          // if(cnt % 55 == 0 && cnt > 0)
+            // top->ii_dout_ready = 1;
+        // }
       }
       tfp->dump ((2*i+clk)*5);
       top->clk = !top->clk;
