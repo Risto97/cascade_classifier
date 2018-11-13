@@ -23,7 +23,6 @@ module eot_gen
 
    logic                              handshake;
    logic [1:0]                        eot_o, eot_next;
-   // logic                              dout_valid_reg;
 
    assign dout_valid = din_valid;
    assign handshake = din_valid & dout_ready;
@@ -31,17 +30,10 @@ module eot_gen
    assign dout_data = din_data;
    assign dout_eot = eot_o;
 
-   // always_ff @(posedge clk)
-   //   begin
-   //      if(rst)
-   //        dout_valid_reg <= 0;
-   //      else
-   //        dout_valid_reg <= din_valid;
-   //   end
-
    always_comb
      begin
         x_cnt_next = x_cnt_reg + 1;
+        y_cnt_next = y_cnt_reg;
         eot_o = 0;
 
         if(x_cnt_next == FEATURE_WIDTH)

@@ -34,6 +34,7 @@ module hopper
    always_comb
      begin
         x_cnt_next = x_cnt_reg + 1;
+        y_cnt_next = y_cnt_reg;
 
         if(x_cnt_next == X_BOUNDARY)
           begin
