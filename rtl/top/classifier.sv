@@ -1,7 +1,12 @@
 module classifier
   #(
     parameter W_DATA = 18,
-    parameter W_ADDR = 10
+    parameter W_ADDR = 10,
+    parameter FEATURE_WIDTH = 25,
+    parameter FEATURE_HEIGHT = 25,
+    parameter FEATURE_NUM = 2913,
+    localparam W_ADDR_RECT = $clog2(FEATURE_NUM*4),
+    localparam W_RECT = $clog2(FEATURE_WIDTH) // should be max(FEATURE_WIDTH, FEATURE_HEIGHT)
     )
    (
     input               clk,
@@ -13,47 +18,65 @@ module classifier
 
     output              addr_valid,
     input               addr_ready,
-    output [W_ADDR-1:0] addr_data
+    output [W_ADDR-1:0] addr_data,
+
+    output              sum_valid,
+    input               sum_ready,
+    output [W_DATA:0]   sum_data
     );
+   logic                rect0_addr_ready, rect0_addr_valid, rect0_addr_eot;
+   logic [W_ADDR-1:0]   rect0_addr_data;
 
-   logic [11:0]         rect0_cnt_next, rect0_cnt_reg;
-   logic [1:0]          rect_data_cnt_reg, rect_data_cnt_next;
-   logic                rect0_addr_valid, rect0_addr_ready;
-   logic                rect0_data_valid, rect0_data_ready;
-   logic [4:0]          rect0_data;
-   logic [13:0]         rect0_addr_data;
+   logic [2:0]          dot_cnt_reg, dot_cnt_next;
+   logic [W_DATA:0]     rect_sum_next, rect_sum_reg;
+   logic                rect_sum_valid_next, rect_sum_valid_reg;
 
+   assign dot_cnt_next = (dot_cnt_reg < 4) ? dot_cnt_reg + 1 : 1;
+   assign sum_valid = rect_sum_valid_reg;
+   assign sum_data = rect_sum_reg;
 
-   assign rect0_cnt_next = (rect_data_cnt_reg == 3) ?
-                           rect0_cnt_reg+1 :
-                           rect0_cnt_reg;
+   always_comb
+     begin
+        rect_sum_valid_next = 0;
+        rect_sum_next = rect_sum_reg;
 
-   assign rect_data_cnt_next = rect_data_cnt_reg + 1;
-
+        case(dot_cnt_reg)
+          1: rect_sum_next = din_data;
+          2: rect_sum_next = rect_sum_reg - din_data;
+          3: rect_sum_next = rect_sum_reg + din_data;
+          4: begin
+             rect_sum_valid_next = 1;
+             rect_sum_next = rect_sum_reg - din_data;
+          end
+        endcase
+     end
 
    always_ff @(posedge clk)
-     if(rst)
-       rect0_cnt_reg <= 0;
-     else
-       rect0_cnt_reg <= rect0_cnt_next;
+     begin
+        if(rst) begin
+           dot_cnt_reg <= 1;
+           rect_sum_reg <= 0;
+           rect_sum_valid_reg <= 0;
+          end else if (din_valid) begin
+             rect_sum_valid_reg <= rect_sum_valid_next;
+             rect_sum_reg <= rect_sum_next;
+             dot_cnt_reg <= dot_cnt_next;
+          end
+     end
 
-   always_ff @(posedge clk)
-     if(rst)
-       rect_data_cnt_reg <= 0;
-     else
-       rect_data_cnt_reg <= rect_data_cnt_next;
-
-   rect0 #(.W_DATA(5),
-           .W_ADDR(14))
-   rect0_mem(
-             .clk(clk),
-             .rst(rst),
-             .addr1_valid(rect0_addr_valid),
-             .addr1_ready(rect0_addr_ready),
-             .addr1_data(rect0_addr_data),
-             .data1_valid(rect0_data_valid),
-             .data1_ready(rect0_data_ready),
-             .data1(rect0_data)
-             );
-
+   rects_mem
+     #(
+       .W_ADDR(W_ADDR),
+       .FEATURE_WIDTH(FEATURE_WIDTH),
+       .FEATURE_HEIGHT(FEATURE_HEIGHT),
+       .FEATURE_NUM(FEATURE_NUM)
+        )
+   rects(
+         .clk(clk),
+         .rst(rst),
+         .addr_valid(addr_valid),
+         .addr_ready(addr_ready),
+         .addr_data(addr_data),
+         .addr_eot(addr_eot)
+         );
 endmodule: classifier

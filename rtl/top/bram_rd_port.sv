@@ -31,7 +31,7 @@ module bram_rd_port
 
    always_ff @(posedge clk)begin
       if(rst)
-         data1_valid_reg <= 1'b0;
+        data1_valid_reg <= 1'b0;
       else
         data1_valid_reg <= addr1_valid;
    end

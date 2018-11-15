@@ -30,9 +30,10 @@ module window_buffer
    logic                full, full_next;
    logic [W_DATA-1:0]   dout_buff;
    logic                dout_valid_reg, addr_ready_reg;
+   logic                handshake_reg;
 
    assign dout_data = dout_buff;
-   assign dout_valid = dout_valid_reg;
+   assign dout_valid = dout_valid_reg & handshake_reg;
    assign addr_ready = addr_ready_reg;
 
    assign wr_cnt_next = (!din_eot[1] & !full) ? (wr_cnt_reg+1):
@@ -56,9 +57,11 @@ module window_buffer
         if(rst)
           begin
              full <= 0;
+             handshake_reg <= 0;
           end
         else
           begin
+             handshake_reg <= addr_valid & addr_ready;
              full <= full_next;
              addr_ready_reg <= full;
           end

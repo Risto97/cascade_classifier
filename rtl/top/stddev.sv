@@ -2,12 +2,13 @@ module stddev
   #(
     parameter W_SII = 26,
     parameter W_II = 18,
-    parameter WINDOW_HEIGHT = 24,
-    parameter WINDOW_WIDTH = 24,
+    parameter WINDOW_HEIGHT = 25,
+    parameter WINDOW_WIDTH = 25,
     parameter W_SQRT = 16,
     parameter SQRT_DEPTH = 256,
     localparam W_ADDR_SQRT = $clog2(SQRT_DEPTH),
-    localparam W_STDDEV = $clog2(2**W_SII*(WINDOW_HEIGHT-1)*(WINDOW_WIDTH-1))
+    localparam W_STDDEV = $clog2(2**W_SII) + $clog2((WINDOW_HEIGHT-1)*(WINDOW_WIDTH-1))
+    // localparam W_STDDEV = $clog2(2**W_SII*(WINDOW_HEIGHT-1)*(WINDOW_WIDTH-1))
     )
    (
     input                 clk,

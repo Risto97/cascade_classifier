@@ -15,7 +15,8 @@ module fifo
 
     output [W_DATA-1:0] dout_data,
     output              dout_valid,
-    input               dout_ready
+    input               dout_ready,
+    output [1:0]        dout_eot
 
  );
 
@@ -23,6 +24,8 @@ module fifo
    localparam DW = $clog2(DEPTH);
 
    logic [W_DATA-1:0]   mem [DEPTH-1:0];
+   logic [1:0]          mem_eot[DEPTH-1:0];
+
    logic [AW:0]         wr_pointer_next, wr_pointer_reg;
    logic [AW:0]         rd_pointer_next, rd_pointer_reg;
 
@@ -41,6 +44,7 @@ module fifo
    assign full  = ~eq_msb & full_or_empty;
 
    assign dout_data = mem[rd_pointer_reg[AW-1:0]];
+   assign dout_eot = mem_eot[rd_pointer_reg[AW-1:0]];
 
    assign dout_valid = ~empty;
    assign din_ready = dout_ready | ~full;
@@ -50,9 +54,11 @@ module fifo
      begin
         if(rst | din_eot[1]) begin
            mem <= '{default:0};
+           mem_eot <= '{default:0};
         end
         else if(we == 1'b1) begin
            mem[wr_pointer_reg[AW-1:0]] <= din_data;
+           mem_eot[wr_pointer_reg[AW-1:0]] <= din_eot;
         end
      end
 

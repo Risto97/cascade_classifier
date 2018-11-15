@@ -3,13 +3,13 @@ module top
     parameter W_DATA = 8,
     parameter IMG_WIDTH = 41,
     parameter IMG_HEIGHT = 50,
-    parameter FEATURE_WIDTH = 24,
-    parameter FEATURE_HEIGHT = 24,
+    parameter FEATURE_WIDTH = 25,
+    parameter FEATURE_HEIGHT = 25,
     parameter PARALLEL_ROWS = 1,
     localparam DATA_MAX = 2**W_DATA-1,
     localparam W_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX),
     localparam W_SII = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX*DATA_MAX),
-    localparam W_STDDEV = $clog2(2**W_SII*(FEATURE_HEIGHT-1)*(FEATURE_WIDTH-1)),
+    localparam W_STDDEV = $clog2(2**W_SII) + $clog2((FEATURE_HEIGHT-1)*(FEATURE_WIDTH-1)),
     localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT)
     )
    (
@@ -18,7 +18,12 @@ module top
 
     output                stddev_valid,
     input                 stddev_ready,
-    output [W_STDDEV-1:0] stddev_data
+    output [W_STDDEV-1:0] stddev_data,
+
+    output                sum_valid,
+    input                 sum_ready,
+    output [17:0]         sum_data
+
    );
 
    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT);
@@ -177,7 +182,10 @@ module top
                 .din_ready(ii_dout_ready),
                 .addr_valid(ii_addr_valid),
                 .addr_ready(ii_addr_ready),
-                .addr_data(ii_addr_data)
+                .addr_data(ii_addr_data),
+                .sum_valid(sum_valid),
+                .sum_ready(sum_ready),
+                .sum_data(sum_data)
                 );
 
 endmodule: top
