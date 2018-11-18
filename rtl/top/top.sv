@@ -1,8 +1,8 @@
 module top
   #(
     parameter W_DATA = 8,
-    parameter IMG_WIDTH = 41,
-    parameter IMG_HEIGHT = 50,
+    parameter IMG_WIDTH = 28,
+    parameter IMG_HEIGHT = 34,
     parameter FEATURE_WIDTH = 25,
     parameter FEATURE_HEIGHT = 25,
     parameter PARALLEL_ROWS = 1,
@@ -16,9 +16,6 @@ module top
     input                 clk,
     input                 rst,
 
-    output                stddev_valid,
-    input                 stddev_ready,
-    output [W_STDDEV-1:0] stddev_data,
 
     output                sum_valid,
     input                 sum_ready,
@@ -60,7 +57,9 @@ module top
    logic               ii_addr_ready;
    logic [W_ADDR_II-1:0] ii_addr_data;
 
-
+   logic                 stddev_valid;
+   logic                 stddev_ready;
+   logic [W_STDDEV-1:0]  stddev_data;
 
    rom_mem #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
    rom(
@@ -185,7 +184,10 @@ module top
                 .addr_data(ii_addr_data),
                 .sum_valid(sum_valid),
                 .sum_ready(sum_ready),
-                .sum_data(sum_data)
+                .sum_data(sum_data),
+                .stddev_valid(stddev_valid),
+                .stddev_ready(stddev_ready),
+                .stddev_data(stddev_data)
                 );
 
 endmodule: top

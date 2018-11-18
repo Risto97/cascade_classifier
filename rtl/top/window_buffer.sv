@@ -61,7 +61,7 @@ module window_buffer
           end
         else
           begin
-             handshake_reg <= addr_valid & addr_ready;
+             handshake_reg <= addr_valid & addr_ready & !din_ready;
              full <= full_next;
              addr_ready_reg <= full;
           end
