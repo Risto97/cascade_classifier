@@ -9,7 +9,7 @@ libname = 'cascade.so'
 libdir = './'
 lib = ctl.load_library(libname, libdir)
 
-filenames = [img for img in glob.glob("../datasets/testset/*jpg")][0:30]
+filenames = [img for img in glob.glob("../datasets/testset/*jpg")]
 img_num = len(filenames)
 
 en_hit_stat = 1

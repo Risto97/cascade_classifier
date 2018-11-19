@@ -1,4 +1,5 @@
 import math
+from VerilogROM import dumpVerilogROM
 
 
 class CascadeClass(object):
@@ -142,7 +143,8 @@ class CascadeClass(object):
 
         print(f"\n#endif", file=f)
 
-    def dumpStageVerilogROM(self, directory, dual_port=False):
+    def dumpStageVerilogROM(self, directory, dual_port=False, block_ram=False):
+        names = ["stage_thresholds"]
         if (directory[-1] != '/'):
             directory = directory + '/'
         if dual_port is True:
@@ -151,281 +153,107 @@ class CascadeClass(object):
             ports = 1
 
         threshold = []
-        featureCount = []
-
         for stage in self.stages:
             threshold.append(int(stage.stageThreshold))
-        print(threshold)
-
-        fn_threshold = directory + f"stageThreshold_rom.sv"
-        print(fn_threshold)
-
-        f_threshold = open(fn_threshold, "w")
-        files = [f_threshold]
+        data_l = [threshold]
 
         max_threshold = max(abs(max(threshold)), abs(min(threshold)))
-        print(max_threshold)
-        w_data_l = [
-            math.ceil(math.log(max_threshold, 2)+1)
-        ]
+        w_data_l = [math.ceil(math.log(max_threshold, 2) + 1)]
         w_addr_l = [math.ceil(math.log(self.stageNum, 2))]
         w_hex_l = [math.ceil(math.log(w_data_l[0], 2))]
 
-        print(f"module stageThreshold_rom", file=files[0])
+        dumpVerilogROM(
+            data_l,
+            w_addr_l,
+            w_data_l,
+            names,
+            directory,
+            dual_port=dual_port,
+            block_ram=block_ram)
 
-        for enum, (f, w_addr, w_data, w_hex) in enumerate(zip(files, w_addr_l, w_data_l, w_hex_l)):
-
-            print(f"  #(", file=f)
-            print(f"     parameter W_DATA = {w_data},", file=f)
-            print(f"     parameter W_ADDR = {w_addr}", file=f)
-            print(f"     )", file=f)
-            print(f"    (", file=f)
-            if (dual_port == True):
-                print(
-                    f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1,\n",
-                    file=f)
-                print(
-                    f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2",
-                    file=f)
-            else:
-                print(
-                    f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n",
-                    file=f)
-
-            print(f"     );", file=f)
-
-            for i in range(1, ports + 1):
-                print(
-                    f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})",
-                    file=f)
-
-            for addr in range(self.stageNum):
-                addr_str = format(addr, f'0{w_addr}b')
-
-                if(enum == 0):
-                    data = threshold[addr]
-
-                if (data < 0):
-                    sign = "-"
-                else:
-                    sign = ""
-                data_str = format(abs(data), f'0{w_hex}x')
-
-                print(f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};',file=f)
-            print(f"               default: data{i} <= 0;", file=f)
-            print(f"           endcase", file=f)
-            print(f"        end", file=f)
-
-        print(f"\nendmodule: stageThreshold_rom", file=files[0])
-
-
-    def dumpFeatureVerilogROM(self, directory, dual_port=False):
-        if (directory[-1] != '/'):
-            directory = directory + '/'
-        if dual_port is True:
-            ports = 2
-        else:
-            ports = 1
-
-        failVal = []
-        passVal = []
+    def dumpFeatureVerilogROM(self, directory, dual_port=False,
+                              block_ram=True):
+        names = ["leafVal0", "leafVal1", "feature_thresholds"]
+        leafVal1 = []
+        leafVal0 = []
         threshold = []
         for stage in self.stages:
             for feature in stage.features:
-                failVal.append(feature.failVal)
-                passVal.append(feature.passVal)
+                leafVal1.append(feature.failVal)
+                leafVal0.append(feature.passVal)
                 threshold.append(feature.threshold)
 
-        import pdb; pdb.set_trace()
+        data_l = [leafVal0, leafVal1, threshold]
 
-
-        fn_failVal = directory + f"failVal_rom.sv"
-        fn_passVal = directory + f"passVal_rom.sv"
-        fn_threshold = directory + f"featureThreshold_rom.sv"
-
-        f_failVal = open(fn_failVal, "w")
-        f_passVal = open(fn_passVal, "w")
-        f_threshold = open(fn_threshold, "w")
-        files = [f_passVal, f_failVal, f_threshold]
-
-        max_leafVal = max(max(abs(max(failVal)), abs(min(failVal))), max(abs(max(passVal)), abs(min(passVal))))
+        max_leafVal = max(
+            max(abs(max(leafVal1)), abs(min(leafVal1))),
+            max(abs(max(leafVal0)), abs(min(leafVal0))))
         max_threshold = max(abs(max(threshold)), abs(min(threshold)))
         w_data_l = [
-            math.ceil(math.log(max_leafVal, 2))+1,
-            math.ceil(math.log(max_leafVal, 2))+1,
-            math.ceil(math.log(max_threshold, 2)+1)
+            math.ceil(math.log(max_leafVal, 2)) + 1,
+            math.ceil(math.log(max_leafVal, 2)) + 1,
+            math.ceil(math.log(max_threshold, 2) + 1)
         ]
         w_addr_l = [math.ceil(math.log(self.featuresNum, 2))] * 3
-        w_hex_leaf = math.ceil(math.log(w_data_l[0], 2))
-        w_hex_l = [w_hex_leaf, w_hex_leaf, math.ceil(math.log(w_data_l[2], 2))]
 
-        print(f"module passVal_rom", file=files[0])
-        print(f"module failVal_rom", file=files[1])
-        print(f"module featureThreshold_rom", file=files[2])
+        dumpVerilogROM(
+            data_l,
+            w_addr_l,
+            w_data_l,
+            names,
+            directory,
+            dual_port=dual_port,
+            block_ram=block_ram)
 
-        for enum, (f, w_addr, w_data, w_hex) in enumerate(zip(files, w_addr_l, w_data_l, w_hex_l)):
-
-            print(f"  #(", file=f)
-            print(f"     parameter W_DATA = {w_data},", file=f)
-            print(f"     parameter W_ADDR = {w_addr}", file=f)
-            print(f"     )", file=f)
-            print(f"    (", file=f)
-            if (dual_port == True):
-                print(
-                    f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1,\n",
-                    file=f)
-                print(
-                    f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2",
-                    file=f)
-            else:
-                print(
-                    f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n",
-                    file=f)
-
-            print(f"     );", file=f)
-
-            print(f"\n     (* rom_style = \"block\" *)\n", file=f)
-
-            for i in range(1, ports + 1):
-                print(
-                    f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})",
-                    file=f)
-
-            for addr in range(self.featuresNum):
-                addr_str = format(addr, f'0{w_addr}b')
-
-                if(enum == 0):
-                    data = passVal[addr]
-                elif(enum == 1):
-                    data = failVal[addr]
-                elif(enum == 2):
-                    data = threshold[addr]
-
-                if (data < 0):
-                    sign = "-"
-                else:
-                    sign = ""
-                data_str = format(abs(data), f'0{w_hex}x')
-
-                print(f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};',file=f)
-            print(f"               default: data{i} <= 0;", file=f)
-            print(f"           endcase", file=f)
-            print(f"        end", file=f)
-
-        print(f"\nendmodule: passVal_rom", file=files[0])
-        print(f"\nendmodule: failVal_rom", file=files[1])
-        print(f"\nendmodule: featureThreshold_rom", file=files[2])
-        pass
-
-    def dumpRectVerilogROM(self, directory):
-        if (directory[-1] != '/'):
-            directory = directory + '/'
+    def dumpRectVerilogROM(self, directory, dual_port=False, block_ram=True):
         for r in range(3):
-            fn_rect = directory + f"rect{r}_rom.sv"
-            fn_weights = directory + f"weights{r}_rom.sv"
-            f_rect = open(fn_rect, "w")
-            f_weights = open(fn_weights, "w")
-            files = [f_rect, f_weights]
+            names = [f"rect{r}", f"weight{r}"]
+            print(names)
+            rect_l = []
+            weight_l = []
+            for stage in self.stages:
+                for feature in stage.features:
+                    try:
+                        A = [
+                            feature.rects[r].A['x'],
+                            feature.rects[r].A['y']
+                        ]
+                        D = [
+                            feature.rects[r].D['x'],
+                            feature.rects[r].D['y']
+                        ]
+                        weight = feature.rects[r].weight // 4096
+                        if (A[0] > D[0] | A[1] > D[1]):
+                            print(
+                                "A is not top left corner, or D is not bottom right corner"
+                            )
+                    except:
+                        weight = 0
+                        A = [0, 0]
+                        D = [0, 0]
 
-            dual_port = False
-            if dual_port is True:
-                ports = 2
-            else:
-                ports = 1
+                    width = D[0] - A[0]
+                    height = D[1] - A[1]
 
+                    rect_l.extend((A[0], A[1], width, height))
+                    weight_l.append(weight)
+
+            data_l = [rect_l, weight_l]
             max_feature_size = max(self.featureSize)
             w_addr_l = [
                 math.ceil(math.log(self.featuresNum * 4, 2)),
                 math.ceil(math.log(self.featuresNum, 2))
             ]
             w_data_l = [math.ceil(math.log(max_feature_size, 2)), 3]
-            w_hex_l = [math.ceil(w_data_l[0] / 4), 1]
 
-            print(f"module rect{r}_rom", file=f_rect)
-            print(f"module weights{r}_rom", file=f_weights)
-            for enum, (f, w_addr, w_data, w_hex) in enumerate(
-                    zip(files, w_addr_l, w_data_l, w_hex_l)):
-                print(f"  #(", file=f)
-                print(f"     parameter W_DATA = {w_data},", file=f)
-                print(f"     parameter W_ADDR = {w_addr}", file=f)
-                print(f"     )", file=f)
-                print(f"    (", file=f)
-                if (dual_port == True):
-                    print(
-                        f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1,\n",
-                        file=f)
-                    print(
-                        f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2",
-                        file=f)
-                else:
-                    print(
-                        f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n",
-                        file=f)
-
-                print(f"     );", file=f)
-
-                print(f"\n     (* rom_style = \"block\" *)\n", file=f)
-
-                for i in range(1, ports + 1):
-                    print(
-                        f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})",
-                        file=f)
-
-                    cnt = 0
-                    for stage in self.stages:
-                        for feature in stage.features:
-                            try:
-                                A = [
-                                    feature.rects[r].A['x'],
-                                    feature.rects[r].A['y']
-                                ]
-                                D = [
-                                    feature.rects[r].D['x'],
-                                    feature.rects[r].D['y']
-                                ]
-                                weight = feature.rects[r].weight
-                                if (A[0] > D[0] | A[1] > D[1]):
-                                    print(
-                                        "A is not top left corner, or D is not bottom right corner"
-                                    )
-                            except:
-                                weight = 0
-                                A = [0, 0]
-                                D = [0, 0]
-
-                            weight = weight // 4096
-                            width = D[0] - A[0]
-                            height = D[1] - A[1]
-
-                            item = []
-                            if enum == 0:
-                                item = A
-                                item.append(width)
-                                item.append(height)
-                            else:
-                                item.append(weight)
-
-                            for data in enumerate(item):
-                                addr = cnt * len(item) + data[0]
-                                addr_str = format(addr, f'0{w_addr}b')
-                                if (data[1] < 0):
-                                    sign = "-"
-                                else:
-                                    sign = ""
-                                data_str = format(abs(data[1]), f'0{w_hex}x')
-                                print(
-                                    f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};',
-                                    file=f)
-
-                            cnt += 1
-
-                    print(f"               default: data{i} <= 0;", file=f)
-                    print(f"           endcase", file=f)
-                    print(f"        end", file=f)
-
-            print(f"\nendmodule: rect{r}_rom", file=f_rect)
-            print(f"\nendmodule: weights{r}_rom", file=f_weights)
-        pass
+            dumpVerilogROM(
+                data_l,
+                w_addr_l,
+                w_data_l,
+                names,
+                directory,
+                dual_port=dual_port,
+                block_ram=block_ram)
 
     @property
     def featuresNum(self):
@@ -517,70 +345,8 @@ if __name__ == "__main__":
 
     cascade = createCascade(doc)
 
-    cascade.dumpFeatureVerilogROM("rtl/top")
-
-    # for stage in cascade.stages[:5]:
-    #     for feature in stage.features:
-    #         Ax = feature.rects[0].A['x']
-    #         Ay = feature.rects[0].A['y']
-    #         Bx = feature.rects[0].B['x']
-    #         By = feature.rects[0].B['y']
-    #         Cx = feature.rects[0].C['x']
-    #         Cy = feature.rects[0].C['y']
-    #         Dx = feature.rects[0].D['x']
-    #         Dy = feature.rects[0].D['y']
-    #         A = Ax + Ay*25
-    #         B = Bx + By*25
-    #         C = Cx + Cy*25
-    #         D = Dx + Dy*25
-
-    #         # print(feature.rects[0].__dict__)
-    #         print(A,B,D,C)
-    #         Ax = feature.rects[1].A['x']
-    #         Ay = feature.rects[1].A['y']
-    #         Bx = feature.rects[1].B['x']
-    #         By = feature.rects[1].B['y']
-    #         Cx = feature.rects[1].C['x']
-    #         Cy = feature.rects[1].C['y']
-    #         Dx = feature.rects[1].D['x']
-    #         Dy = feature.rects[1].D['y']
-    #         A = Ax + Ay*25
-    #         B = Bx + By*25
-    #         C = Cx + Cy*25
-    #         D = Dx + Dy*25
-
-    #         # print(feature.rects[0].__dict__)
-    #         print(A,B,D,C)
-    #         try:
-    #             Ax = feature.rects[2].A['x']
-    #             Ay = feature.rects[2].A['y']
-    #             Bx = feature.rects[2].B['x']
-    #             By = feature.rects[2].B['y']
-    #             Cx = feature.rects[2].C['x']
-    #             Cy = feature.rects[2].C['y']
-    #             Dx = feature.rects[2].D['x']
-    #             Dy = feature.rects[2].D['y']
-    #             A = Ax + Ay*25
-    #             B = Bx + By*25
-    #             C = Cx + Cy*25
-    #             D = Dx + Dy*25
-    #         except:
-    #             A = 0
-    #             B = 0
-    #             C = 0
-    #             D = 0
-
-    #         # print(feature.rects[0].__dict__)
-    #         print(A,B,D,C)
-    #         print("----------------")
-
-    print("if(", end="")
-    for stage in cascade.stages:
-        print("feature_cnt_reg==",stage.featuresIndex[-1]+1, end="||")
-
-    print(") begin")
-
-    cascade.dumpRectVerilogROM("rtl/top/")
-    cascade.dumpStageVerilogROM("rtl/top/")
+    cascade.dumpFeatureVerilogROM("VerilogROM/")
+    cascade.dumpRectVerilogROM("VerilogROM/")
+    cascade.dumpStageVerilogROM("VerilogROM/")
 
     # cascade.dumpCpp(fn)
