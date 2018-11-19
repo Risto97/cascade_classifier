@@ -1,11 +1,19 @@
 import xmltodict
 import math
-
+import os
+import errno
 
 def dumpVerilogROM(data_l, w_addr_l, w_data_l, names, directory,
                    dual_port=False, block_ram=True):
     if (directory[-1] != '/'):
         directory = directory + '/'
+    if not os.path.exists(os.path.dirname(directory)):
+        try:
+            os.makedirs(os.path.dirname(directory))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
     if dual_port is True:
         ports = 2
     else:

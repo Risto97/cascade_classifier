@@ -172,46 +172,46 @@ class CascadeClass(object):
             block_ram=block_ram)
 
     def dumpFeatureVerilogROM(self, directory, dual_port=False,
-                              block_ram=True):
-        names = ["leafVal0", "leafVal1", "feature_thresholds"]
-        leafVal1 = []
-        leafVal0 = []
-        threshold = []
-        for stage in self.stages:
+                              block_ram=False):
+        for s, stage in enumerate(self.stages):
+            names = [f"leafVal0_s{s}", f"leafVal1_s{s}", f"feature_thresholds_s{s}"]
+            leafVal1 = []
+            leafVal0 = []
+            threshold = []
+            feature_num = stage.maxWeakCount
             for feature in stage.features:
                 leafVal1.append(feature.failVal)
                 leafVal0.append(feature.passVal)
                 threshold.append(feature.threshold)
 
-        data_l = [leafVal0, leafVal1, threshold]
+            data_l = [leafVal0, leafVal1, threshold]
 
-        max_leafVal = max(
-            max(abs(max(leafVal1)), abs(min(leafVal1))),
-            max(abs(max(leafVal0)), abs(min(leafVal0))))
-        max_threshold = max(abs(max(threshold)), abs(min(threshold)))
-        w_data_l = [
-            math.ceil(math.log(max_leafVal, 2)) + 1,
-            math.ceil(math.log(max_leafVal, 2)) + 1,
-            math.ceil(math.log(max_threshold, 2) + 1)
-        ]
-        w_addr_l = [math.ceil(math.log(self.featuresNum, 2))] * 3
+            max_leafVal = max(
+                max(abs(max(leafVal1)), abs(min(leafVal1))),
+                max(abs(max(leafVal0)), abs(min(leafVal0))))
+            max_threshold = max(abs(max(threshold)), abs(min(threshold)))
+            w_data_l = [
+                math.ceil(math.log(max_leafVal, 2)) + 1,
+                math.ceil(math.log(max_leafVal, 2)) + 1,
+                math.ceil(math.log(max_threshold, 2) + 1)
+            ]
+            w_addr_l = [math.ceil(math.log(feature_num, 2))] * 3
 
-        dumpVerilogROM(
-            data_l,
-            w_addr_l,
-            w_data_l,
-            names,
-            directory,
-            dual_port=dual_port,
-            block_ram=block_ram)
+            dumpVerilogROM(
+                data_l,
+                w_addr_l,
+                w_data_l,
+                names,
+                directory,
+                dual_port=dual_port,
+                block_ram=block_ram)
 
-    def dumpRectVerilogROM(self, directory, dual_port=False, block_ram=True):
-        for r in range(3):
-            names = [f"rect{r}", f"weight{r}"]
-            print(names)
-            rect_l = []
-            weight_l = []
-            for stage in self.stages:
+    def dumpRectVerilogROM(self, directory, dual_port=False, block_ram=False):
+        for s, stage in enumerate(self.stages):
+            for r in range(3):
+                names = [f"rect{r}_s{s}", f"weight{r}_s{s}"]
+                rect_l = []
+                weight_l = []
                 for feature in stage.features:
                     try:
                         A = [
@@ -238,22 +238,22 @@ class CascadeClass(object):
                     rect_l.extend((A[0], A[1], width, height))
                     weight_l.append(weight)
 
-            data_l = [rect_l, weight_l]
-            max_feature_size = max(self.featureSize)
-            w_addr_l = [
-                math.ceil(math.log(self.featuresNum * 4, 2)),
-                math.ceil(math.log(self.featuresNum, 2))
-            ]
-            w_data_l = [math.ceil(math.log(max_feature_size, 2)), 3]
+                data_l = [rect_l, weight_l]
+                max_feature_size = max(self.featureSize)
+                w_addr_l = [
+                    math.ceil(math.log(len(rect_l) * 4, 2)),
+                    math.ceil(math.log(len(weight_l), 2))
+                ]
+                w_data_l = [math.ceil(math.log(max_feature_size, 2)), 3]
 
-            dumpVerilogROM(
-                data_l,
-                w_addr_l,
-                w_data_l,
-                names,
-                directory,
-                dual_port=dual_port,
-                block_ram=block_ram)
+                dumpVerilogROM(
+                    data_l,
+                    w_addr_l,
+                    w_data_l,
+                    names,
+                    directory,
+                    dual_port=dual_port,
+                    block_ram=block_ram)
 
     @property
     def featuresNum(self):
@@ -345,8 +345,8 @@ if __name__ == "__main__":
 
     cascade = createCascade(doc)
 
-    cascade.dumpFeatureVerilogROM("VerilogROM/")
-    cascade.dumpRectVerilogROM("VerilogROM/")
+    cascade.dumpFeatureVerilogROM("VerilogROM/leafVals")
+    cascade.dumpRectVerilogROM("VerilogROM/rects/")
     cascade.dumpStageVerilogROM("VerilogROM/")
 
     # cascade.dumpCpp(fn)
