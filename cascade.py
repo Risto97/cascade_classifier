@@ -1,3 +1,7 @@
+import math
+from VerilogROM import dumpVerilogROM
+
+
 class CascadeClass(object):
     def __init__(self):
         self.stageNum = 0
@@ -27,9 +31,12 @@ class CascadeClass(object):
         print(f"const unsigned int stageNum = {self.stageNum};", file=f)
         print(
             f"const unsigned int maxWeakCount = {self.maxWeakCount};", file=f)
-        print(f"const unsigned int FRAME_HEIGHT = {self.featureSize[0]+1};", file=f)
         print(
-            f"const unsigned int FRAME_WIDTH = {self.featureSize[1]+1};\n", file=f)
+            f"const unsigned int FRAME_HEIGHT = {self.featureSize[0]+1};",
+            file=f)
+        print(
+            f"const unsigned int FRAME_WIDTH = {self.featureSize[1]+1};\n",
+            file=f)
 
         print(
             f"const unsigned int stagesFeatureCount[{self.stageNum}]=",
@@ -54,56 +61,63 @@ class CascadeClass(object):
                 print(f"{int(stage.stageThreshold)}", end='', file=f)
         print("};\n", file=f)
 
-
-        print(f"const signed int featureThresholds[{self.featuresNum}]=", end='{', file=f)
+        print(
+            f"const signed int featureThresholds[{self.featuresNum}]=",
+            end='{',
+            file=f)
         for stage in self.stages:
             for feature in stage.features:
-                if feature.featureNum == self.featuresNum-1:
-                    print(f"{feature.threshold}", end = '', file=f)
+                if feature.featureNum == self.featuresNum - 1:
+                    print(f"{feature.threshold}", end='', file=f)
                 else:
-                    print(f"{feature.threshold}", end = ',', file=f)
+                    print(f"{feature.threshold}", end=',', file=f)
         print("};\n", file=f)
 
         print(
-            f"const signed int passVal[{self.featuresNum}]=",
-            end='{', file=f)
+            f"const signed int passVal[{self.featuresNum}]=", end='{', file=f)
         for stage in self.stages:
             for feature in stage.features:
-                if feature.featureNum == self.featuresNum-1:
+                if feature.featureNum == self.featuresNum - 1:
                     print(f"{feature.passVal}", end='', file=f)
                 else:
                     print(f"{feature.passVal}", end=',', file=f)
         print("};\n", file=f)
 
         print(
-            f"const signed int failVal[{self.featuresNum}]=",
-            end='{', file=f)
+            f"const signed int failVal[{self.featuresNum}]=", end='{', file=f)
         for stage in self.stages:
             for feature in stage.features:
-                if feature.featureNum == self.featuresNum-1:
+                if feature.featureNum == self.featuresNum - 1:
                     print(f"{feature.failVal}", end='', file=f)
                 else:
                     print(f"{feature.failVal}", end=',', file=f)
         print("};\n", file=f)
 
         for i in range(self.maxRectCount):
-            print(f"const signed int weight{i}[{self.featuresNum}]=", end='{', file=f)
+            print(
+                f"const signed int weight{i}[{self.featuresNum}]=",
+                end='{',
+                file=f)
             for stage in self.stages:
                 for feature in stage.features:
                     try:
-                        if feature.featureNum == self.featuresNum-1:
+                        if feature.featureNum == self.featuresNum - 1:
                             print(f"{feature.rects[i].weight}", end='', file=f)
                         else:
-                            print(f"{feature.rects[i].weight}", end=',', file=f)
+                            print(
+                                f"{feature.rects[i].weight}", end=',', file=f)
                     except:
-                        if feature.featureNum == self.featuresNum-1:
+                        if feature.featureNum == self.featuresNum - 1:
                             print(f"0", end='', file=f)
                         else:
                             print(f"0", end=',', file=f)
             print("};\n", file=f)
 
         for i in range(self.maxRectCount):
-            print(f"const unsigned int rect{i}[{self.featuresNum}][4][2]=", end='{', file=f)
+            print(
+                f"const unsigned int rect{i}[{self.featuresNum}][4][2]=",
+                end='{',
+                file=f)
             for stage in self.stages:
                 for feature in stage.features:
                     try:
@@ -114,13 +128,13 @@ class CascadeClass(object):
                         concat = f"{strA},{strB},{strC},{strD}"
                         print("{{", end='', file=f)
                         print(concat, end='', file=f)
-                        if feature.featureNum == self.featuresNum-1:
+                        if feature.featureNum == self.featuresNum - 1:
                             print("}", end='', file=f)
                         else:
                             print("}", end=',', file=f)
 
                     except:
-                        if feature.featureNum == self.featuresNum-1:
+                        if feature.featureNum == self.featuresNum - 1:
                             print("{{0,0},{0,0},{0,0},{0,0}}", end='', file=f)
                         else:
                             print("{{0,0},{0,0},{0,0},{0,0}}", end=',', file=f)
@@ -129,6 +143,117 @@ class CascadeClass(object):
 
         print(f"\n#endif", file=f)
 
+    def dumpStageVerilogROM(self, directory, dual_port=False, block_ram=False):
+        names = ["stage_thresholds"]
+        if (directory[-1] != '/'):
+            directory = directory + '/'
+        if dual_port is True:
+            ports = 2
+        else:
+            ports = 1
+
+        threshold = []
+        for stage in self.stages:
+            threshold.append(int(stage.stageThreshold))
+        data_l = [threshold]
+
+        max_threshold = max(abs(max(threshold)), abs(min(threshold)))
+        w_data_l = [math.ceil(math.log(max_threshold, 2) + 1)]
+        w_addr_l = [math.ceil(math.log(self.stageNum, 2))]
+        w_hex_l = [math.ceil(math.log(w_data_l[0], 2))]
+
+        dumpVerilogROM(
+            data_l,
+            w_addr_l,
+            w_data_l,
+            names,
+            directory,
+            dual_port=dual_port,
+            block_ram=block_ram)
+
+    def dumpFeatureVerilogROM(self, directory, dual_port=False,
+                              block_ram=True):
+        names = ["leafVal0", "leafVal1", "feature_thresholds"]
+        leafVal1 = []
+        leafVal0 = []
+        threshold = []
+        for stage in self.stages:
+            for feature in stage.features:
+                leafVal1.append(feature.failVal)
+                leafVal0.append(feature.passVal)
+                threshold.append(feature.threshold)
+
+        data_l = [leafVal0, leafVal1, threshold]
+
+        max_leafVal = max(
+            max(abs(max(leafVal1)), abs(min(leafVal1))),
+            max(abs(max(leafVal0)), abs(min(leafVal0))))
+        max_threshold = max(abs(max(threshold)), abs(min(threshold)))
+        w_data_l = [
+            math.ceil(math.log(max_leafVal, 2)) + 1,
+            math.ceil(math.log(max_leafVal, 2)) + 1,
+            math.ceil(math.log(max_threshold, 2) + 1)
+        ]
+        w_addr_l = [math.ceil(math.log(self.featuresNum, 2))] * 3
+
+        dumpVerilogROM(
+            data_l,
+            w_addr_l,
+            w_data_l,
+            names,
+            directory,
+            dual_port=dual_port,
+            block_ram=block_ram)
+
+    def dumpRectVerilogROM(self, directory, dual_port=False, block_ram=True):
+        for r in range(3):
+            names = [f"rect{r}", f"weight{r}"]
+            print(names)
+            rect_l = []
+            weight_l = []
+            for stage in self.stages:
+                for feature in stage.features:
+                    try:
+                        A = [
+                            feature.rects[r].A['x'],
+                            feature.rects[r].A['y']
+                        ]
+                        D = [
+                            feature.rects[r].D['x'],
+                            feature.rects[r].D['y']
+                        ]
+                        weight = feature.rects[r].weight // 4096
+                        if (A[0] > D[0] | A[1] > D[1]):
+                            print(
+                                "A is not top left corner, or D is not bottom right corner"
+                            )
+                    except:
+                        weight = 0
+                        A = [0, 0]
+                        D = [0, 0]
+
+                    width = D[0] - A[0]
+                    height = D[1] - A[1]
+
+                    rect_l.extend((A[0], A[1], width, height))
+                    weight_l.append(weight)
+
+            data_l = [rect_l, weight_l]
+            max_feature_size = max(self.featureSize)
+            w_addr_l = [
+                math.ceil(math.log(self.featuresNum * 4, 2)),
+                math.ceil(math.log(self.featuresNum, 2))
+            ]
+            w_data_l = [math.ceil(math.log(max_feature_size, 2)), 3]
+
+            dumpVerilogROM(
+                data_l,
+                w_addr_l,
+                w_data_l,
+                names,
+                directory,
+                dual_port=dual_port,
+                block_ram=block_ram)
 
     @property
     def featuresNum(self):
@@ -220,4 +345,8 @@ if __name__ == "__main__":
 
     cascade = createCascade(doc)
 
-    cascade.dumpCpp(fn)
+    cascade.dumpFeatureVerilogROM("VerilogROM/")
+    cascade.dumpRectVerilogROM("VerilogROM/")
+    cascade.dumpStageVerilogROM("VerilogROM/")
+
+    # cascade.dumpCpp(fn)

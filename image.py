@@ -90,13 +90,13 @@ class ImageClass(object):
         print(f"     parameter W_ADDR = {addr_w}", file=f)
         print(f"     )", file=f)
         print(f"    (", file=f)
-        print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1,\n", file=f)
-        print(f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2", file=f)
+        print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n", file=f)
+        # print(f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2", file=f)
         print(f"     );", file=f)
 
         print(f"\n     (* rom_style = \"block\" *)\n", file=f)
 
-        for i in range(1,3):
+        for i in range(1,2):
             print(f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})",file=f)
 
             for y in range(self.img_size[0]):
@@ -115,12 +115,12 @@ class ImageClass(object):
         pass
 
 if __name__ == "__main__":
-    img_fn = 'datasets/1.pgm'
+    img_fn = 'datasets/rtl2.jpg'
     img = ImageClass()
     img.loadImage(img_fn)
 
     # img.dumpArrayC("c/slika.hpp")
-    img.dumpVerilogROM("rtl/bram_rom/bram_rom.sv")
+    img.dumpVerilogROM("rtl/top/bram_rom.sv")
 
     # import time
     # start_time = time.time()

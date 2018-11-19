@@ -5,11 +5,14 @@
 #include "cascade_utils.hpp"
 #include "cascade.hpp"
 
+unsigned int stage_hit[25] = {0};
 
 extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
                       int src_height,
                       int src_width,
                       uint16_t subwindows[1000],
+                      int en_hit_stat,
+                      float hit[26],
                       float scaleFactor
                       ){
 
@@ -37,14 +40,15 @@ extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
 
 
   while(img_height > FRAME_HEIGHT && img_width > FRAME_WIDTH){
-    for(y = 0; y < img_height-FRAME_HEIGHT-1; y+=1){
-      for(x=0; x < img_width-FRAME_WIDTH-1; x +=2){
+    // std::cout << img_height << "  " << img_width << "\n";
+    for(y = 0; y < img_height-FRAME_HEIGHT; y+=1){
+      for(x=0; x < img_width-FRAME_WIDTH; x +=1){
         calcIntegralImages(img_scaled, x, y, img_ii, img_sii);
         stddev = calcStddev(img_sii, img_ii);
-        result = detectFrame(img_ii, stddev);
-        if(result == 0){
-          x = x+10;
-        }
+        result = detectFrame(img_ii, stddev, en_hit_stat);
+        // if(result == 0){
+        //   x = x+10;
+        // }
         if(result == stageNum){
           subwindows[number_of_boxes*4]   = int(x*factor);
           subwindows[number_of_boxes*4+1] = int(y*factor);
@@ -59,17 +63,24 @@ extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
     img_width = src_width / factor;
     imageScaler(img_orig, img_scaled, src_height, src_width, factor);
   }
+
+  if(en_hit_stat)
+    for( int i = 0; i < stageNum; i++)
+      hit[i] = float(stage_hit[i]) / stage_hit[0] * 100;
+
   return number_of_boxes;
 }
 
 int detectFrame(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
-                int64_t stddev){
+                int64_t stddev,
+                int en_hit_stat){
   unsigned int stage_num = 0;
   unsigned int feature_start = 0;
   int result = 0;
 
   for(stage_num = 0; stage_num < stageNum; stage_num++){
     result = stageRes(ii, stddev, feature_start, stage_num);
+    if(en_hit_stat) stage_hit[stage_num] += 1;
     if(result == -1) return stage_num;
 
     feature_start += stagesFeatureCount[stage_num];
