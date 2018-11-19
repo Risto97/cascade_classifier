@@ -37,8 +37,8 @@ extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
 
 
   while(img_height > FRAME_HEIGHT && img_width > FRAME_WIDTH){
-    for(y = 0; y < img_height-FRAME_HEIGHT-1; y+=1){
-      for(x=0; x < img_width-FRAME_WIDTH-1; x +=1){
+    for(y = 0; y < img_height-FRAME_HEIGHT; y+=1){
+      for(x=0; x < img_width-FRAME_WIDTH; x +=1){
         calcIntegralImages(img_scaled, x, y, img_ii, img_sii);
         stddev = calcStddev(img_sii, img_ii);
         result = detectFrame(img_ii, stddev);

@@ -28,9 +28,9 @@ module classifier
     input                addr_ready,
     output [W_ADDR-1:0]  addr_data,
 
-    output               sum_valid,
-    input                sum_ready,
-    output [W_DATA:0]    sum_data,
+    output               result_valid,
+    input                result_ready,
+    output               result_data,
 
     input                stddev_valid,
     output               stddev_ready,
@@ -65,6 +65,11 @@ module classifier
    logic                              din_ready_o;
    logic                              local_rst, internal_rst_reg, internal_rst_next;
 
+   logic                              result_valid_o, result_data_o;
+
+   assign result_valid = result_valid_o;
+   assign result_data = result_data_o;
+
    assign local_rst = internal_rst_reg | rst;
 
    assign din_ready = din_ready_o;
@@ -72,8 +77,6 @@ module classifier
    assign stddev_ready = 1;
 
    assign dot_cnt_next = (dot_cnt_reg < 4) ? dot_cnt_reg + 1 : 1;
-   assign sum_valid = rect_sum_valid_reg;
-   assign sum_data = rect_sum_reg;
 
    assign accum_weighted_sum_valid = (rect_cnt_reg == 3) & rect_sum_valid_reg;
 
@@ -84,15 +87,23 @@ module classifier
    assign thresh_stddev = featureThreshold * $signed(stddev_data);
 
 
-   always @(stage_sum_valid_reg)
+   always_comb
      begin
         din_ready_o = 0;
         internal_rst_next = 0;
+        result_valid_o = 0;
+        result_data_o = 0;
 
         if(stage_sum_valid_reg) begin
            if(stage_sum_reg < stageThreshold) begin
               din_ready_o = 1;
               internal_rst_next = 1;
+           end
+           if(stage_cnt_reg == 25) begin
+              din_ready_o = 1;
+              internal_rst_next = 1;
+              result_valid_o = 1;
+              result_data_o = 1;
            end
         end
      end
@@ -104,9 +115,6 @@ module classifier
         stage_sum_valid_next = 0;
         stage_sum_next = stage_sum_reg;
 
-        // if(stage_sum_valid_reg)
-        //   stage_sum_next = 0;
-
         if(leaf_valid) begin
            if(feature_cnt_reg== 9||feature_cnt_reg== 25||feature_cnt_reg== 52||feature_cnt_reg== 84||feature_cnt_reg== 136||feature_cnt_reg== 189||feature_cnt_reg== 251||feature_cnt_reg== 323||feature_cnt_reg== 406||feature_cnt_reg== 497||feature_cnt_reg== 596||feature_cnt_reg== 711||feature_cnt_reg== 838||feature_cnt_reg== 973||feature_cnt_reg== 1109||feature_cnt_reg== 1246||feature_cnt_reg== 1405||feature_cnt_reg== 1560||feature_cnt_reg== 1729||feature_cnt_reg== 1925||feature_cnt_reg== 2122||feature_cnt_reg== 2303||feature_cnt_reg== 2502||feature_cnt_reg== 2713||feature_cnt_reg== 2913) begin
               stage_sum_next = feature_accum_reg;
@@ -117,46 +125,22 @@ module classifier
            else
              feature_accum_next = feature_accum_reg + leafVal_data;
         end
-
-
-        // if(leaf_valid) begin
-        //    case(feature_cnt_reg)
-        //      9 : begin
-        //         stage_sum_next = feature_accum_reg;
-        //         stage_sum_valid_next = 1;
-        //         stage_cnt_next = stage_cnt_reg + 1;
-        //         feature_accum_next = leafVal_data;
-        //      end
-        //      25 : begin
-        //         stage_sum_next = feature_accum_reg;
-        //         stage_sum_valid_next = 1;
-        //         stage_cnt_next = stage_cnt_reg + 1;
-        //         feature_accum_next = leafVal_data;
-        //      end
-        //      52 : begin
-        //         stage_sum_next = feature_accum_reg;
-        //         stage_sum_valid_next = 1;
-        //         stage_cnt_next = stage_cnt_reg + 1;
-        //         feature_accum_next = leafVal_data;
-        //      end
-        //      84 : begin
-        //         stage_sum_next = feature_accum_reg;
-        //         stage_sum_valid_next = 1;
-        //         stage_cnt_next = stage_cnt_reg + 1;
-        //         feature_accum_next = leafVal_data;
-        //      end
-        //      default: feature_accum_next = feature_accum_reg + leafVal_data;
-        //    endcase
-        // end
      end
 
    always_comb
      begin
         accum_weighted_sum_next = accum_weighted_sum_reg;
-        if(rect_sum_valid_reg && !accum_weighted_sum_valid)
-             accum_weighted_sum_next = accum_weighted_sum_reg + weighted_sum;
-        else if(accum_weighted_sum_valid)
-          accum_weighted_sum_next = 0;
+        if(rect_sum_valid_reg) begin
+           accum_weighted_sum_next = accum_weighted_sum_reg + weighted_sum;
+
+           if(rect_cnt_reg == 1)
+             accum_weighted_sum_next = weighted_sum;
+        end
+
+
+
+        // else if(accum_weighted_sum_valid && rect_sum_valid_reg)
+        //   accum_weighted_sum_next = 0;
      end
 
    always_comb
@@ -280,7 +264,7 @@ module classifier
    logic                                  leaf_valid_tmp, leaf_valid, leaf_ready, leaf_addr_ready, leaf_addr_valid;
    logic signed [W_LEAF:0]                leafVal_data;
 
-   assign leafNum = (accum_weighted_sum_reg >= thresh_stddev) ? 0 : 1;
+   assign leafNum = (accum_weighted_sum_next >= thresh_stddev) ? 0 : 1;
    assign leaf_ready = 1;
    assign leaf_addr_valid = featureThreshold_addr_valid;
    assign leaf_valid = leaf_valid_tmp & accum_weighted_sum_valid;

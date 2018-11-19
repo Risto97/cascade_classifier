@@ -142,6 +142,83 @@ class CascadeClass(object):
 
         print(f"\n#endif", file=f)
 
+    def dumpStageVerilogROM(self, directory, dual_port=False):
+        if (directory[-1] != '/'):
+            directory = directory + '/'
+        if dual_port is True:
+            ports = 2
+        else:
+            ports = 1
+
+        threshold = []
+        featureCount = []
+
+        for stage in self.stages:
+            threshold.append(int(stage.stageThreshold))
+        print(threshold)
+
+        fn_threshold = directory + f"stageThreshold_rom.sv"
+        print(fn_threshold)
+
+        f_threshold = open(fn_threshold, "w")
+        files = [f_threshold]
+
+        max_threshold = max(abs(max(threshold)), abs(min(threshold)))
+        print(max_threshold)
+        w_data_l = [
+            math.ceil(math.log(max_threshold, 2)+1)
+        ]
+        w_addr_l = [math.ceil(math.log(self.stageNum, 2))]
+        w_hex_l = [math.ceil(math.log(w_data_l[0], 2))]
+
+        print(f"module stageThreshold_rom", file=files[0])
+
+        for enum, (f, w_addr, w_data, w_hex) in enumerate(zip(files, w_addr_l, w_data_l, w_hex_l)):
+
+            print(f"  #(", file=f)
+            print(f"     parameter W_DATA = {w_data},", file=f)
+            print(f"     parameter W_ADDR = {w_addr}", file=f)
+            print(f"     )", file=f)
+            print(f"    (", file=f)
+            if (dual_port == True):
+                print(
+                    f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1,\n",
+                    file=f)
+                print(
+                    f"     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2",
+                    file=f)
+            else:
+                print(
+                    f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n",
+                    file=f)
+
+            print(f"     );", file=f)
+
+            for i in range(1, ports + 1):
+                print(
+                    f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})",
+                    file=f)
+
+            for addr in range(self.stageNum):
+                addr_str = format(addr, f'0{w_addr}b')
+
+                if(enum == 0):
+                    data = threshold[addr]
+
+                if (data < 0):
+                    sign = "-"
+                else:
+                    sign = ""
+                data_str = format(abs(data), f'0{w_hex}x')
+
+                print(f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};',file=f)
+            print(f"               default: data{i} <= 0;", file=f)
+            print(f"           endcase", file=f)
+            print(f"        end", file=f)
+
+        print(f"\nendmodule: stageThreshold_rom", file=files[0])
+
+
     def dumpFeatureVerilogROM(self, directory, dual_port=False):
         if (directory[-1] != '/'):
             directory = directory + '/'
@@ -159,17 +236,20 @@ class CascadeClass(object):
                 passVal.append(feature.passVal)
                 threshold.append(feature.threshold)
 
+        import pdb; pdb.set_trace()
+
+
         fn_failVal = directory + f"failVal_rom.sv"
         fn_passVal = directory + f"passVal_rom.sv"
-        fn_threshold = directory + f"feature_threshold_rom.sv"
+        fn_threshold = directory + f"featureThreshold_rom.sv"
 
         f_failVal = open(fn_failVal, "w")
         f_passVal = open(fn_passVal, "w")
         f_threshold = open(fn_threshold, "w")
         files = [f_passVal, f_failVal, f_threshold]
 
-        max_leafVal = max(max(failVal), max(passVal))
-        max_threshold = max(threshold)
+        max_leafVal = max(max(abs(max(failVal)), abs(min(failVal))), max(abs(max(passVal)), abs(min(passVal))))
+        max_threshold = max(abs(max(threshold)), abs(min(threshold)))
         w_data_l = [
             math.ceil(math.log(max_leafVal, 2))+1,
             math.ceil(math.log(max_leafVal, 2))+1,
@@ -228,6 +308,9 @@ class CascadeClass(object):
                 data_str = format(abs(data), f'0{w_hex}x')
 
                 print(f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};',file=f)
+            print(f"               default: data{i} <= 0;", file=f)
+            print(f"           endcase", file=f)
+            print(f"        end", file=f)
 
         print(f"\nendmodule: passVal_rom", file=files[0])
         print(f"\nendmodule: failVal_rom", file=files[1])
@@ -289,7 +372,7 @@ class CascadeClass(object):
                         file=f)
 
                     cnt = 0
-                    for stage in self.stages[:3]:
+                    for stage in self.stages:
                         for feature in stage.features:
                             try:
                                 A = [
@@ -491,6 +574,13 @@ if __name__ == "__main__":
     #         print(A,B,D,C)
     #         print("----------------")
 
+    print("if(", end="")
+    for stage in cascade.stages:
+        print("feature_cnt_reg==",stage.featuresIndex[-1]+1, end="||")
+
+    print(") begin")
+
     cascade.dumpRectVerilogROM("rtl/top/")
+    cascade.dumpStageVerilogROM("rtl/top/")
 
     # cascade.dumpCpp(fn)

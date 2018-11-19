@@ -9,7 +9,7 @@ libname = 'cascade.so'
 libdir = './'
 lib = ctl.load_library(libname, libdir)
 
-img_fn = '../datasets/lena.pgm'
+img_fn = '../datasets/rtl2.jpg'
 img = cv2.imread(img_fn, 0)
 img_clr = cv2.imread(img_fn)
 img = img.astype('u1')

@@ -40,12 +40,12 @@ module leafVal
         addr_ready_o = 0;
         data_valid_o = 0;
         data_o = 0;
-        leaf0_addr_valid = 0;
-        leaf1_addr_valid = 0;
-        leaf1_addr = 0;
-        leaf0_addr = 0;
-        leaf0_data_ready = 0;
-        leaf1_data_ready = 0;
+        leaf0_addr_valid = addr_valid;
+        leaf1_addr_valid = addr_valid;
+        leaf1_addr = addr_data;
+        leaf0_addr = addr_data;
+        leaf0_data_ready = data_ready;
+        leaf1_data_ready = data_ready;
 
         if(addr_valid)
           case(leaf_num)

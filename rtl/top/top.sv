@@ -1,8 +1,8 @@
 module top
   #(
     parameter W_DATA = 8,
-    parameter IMG_WIDTH = 28,
-    parameter IMG_HEIGHT = 34,
+    parameter IMG_WIDTH = 45,
+    parameter IMG_HEIGHT = 45,
     parameter FEATURE_WIDTH = 25,
     parameter FEATURE_HEIGHT = 25,
     parameter PARALLEL_ROWS = 1,
@@ -13,13 +13,13 @@ module top
     localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT)
     )
    (
-    input                 clk,
-    input                 rst,
+    input  clk,
+    input  rst,
 
 
-    output                sum_valid,
-    input                 sum_ready,
-    output [17:0]         sum_data
+    output result_valid,
+    input  result_ready,
+    output result_data
 
    );
 
@@ -182,9 +182,9 @@ module top
                 .addr_valid(ii_addr_valid),
                 .addr_ready(ii_addr_ready),
                 .addr_data(ii_addr_data),
-                .sum_valid(sum_valid),
-                .sum_ready(sum_ready),
-                .sum_data(sum_data),
+                .result_valid(result_valid),
+                .result_ready(result_ready),
+                .result_data(result_data),
                 .stddev_valid(stddev_valid),
                 .stddev_ready(stddev_ready),
                 .stddev_data(stddev_data)

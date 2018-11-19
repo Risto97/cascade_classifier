@@ -27,14 +27,14 @@ int main(int argc, char **argv, char **env){
   top-> rst = 1;
   int cnt = 0;
 
-  for(i=0; i<10000; i++){
+  for(i=0; i<1020000; i++){
     top->rst = (i<2);
 
     for (clk=0; clk<2; clk++){
       if(i>3 && clk == 1){
 
-        // top->ii_dout_ready = 0;
-        top->stddev_ready = 1;
+        top->result_ready = 1;
+        // top->stddev_ready = 1;
         // top->ii_addr_valid = 1;
 
         // if(top->ii_addr_ready){
