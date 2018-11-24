@@ -6,6 +6,7 @@ module data_fetcher
     parameter FEATURE_WIDTH = 24,
     parameter FEATURE_HEIGHT = 24,
     parameter PARALLEL_ROWS = 1,
+    parameter SCALE_NUM = 2,
     localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT)
     )
    (
@@ -37,6 +38,12 @@ module data_fetcher
    logic [W_X-1:0]      sweeper_x_start;
    logic [W_Y-1:0]      sweeper_y_start;
    logic                sweeper_addr_valid, sweeper_addr_ready;
+   logic                hop_eot;
+
+   logic               hopper_next_valid;
+   logic               hopper_next_ready;
+   logic [W_X-1:0]     hopper_next_x;
+   logic [W_Y-1:0]     hopper_next_y;
 
    assign sweeper_addr_ready = x_ready & y_ready;
 
@@ -60,32 +67,16 @@ module data_fetcher
              .IMG_WIDTH(IMG_WIDTH),
              .SWEEP_X(FEATURE_WIDTH),
              .SWEEP_Y(FEATURE_HEIGHT),
-             .STRIDE_Y(PARALLEL_ROWS))
+             .STRIDE_Y(PARALLEL_ROWS),
+             .SCALE_NUM(SCALE_NUM))
    sweeper_i(
              .clk(clk),
              .rst(rst),
-             .cfg_valid(sweeper_cfg_valid),
-             .cfg_ready(sweeper_cfg_ready),
-             .x_start(sweeper_x_start),
-             .y_start(sweeper_y_start),
              .addr_valid(sweeper_addr_valid),
              .addr_ready(sweeper_addr_ready),
              .x(x),
              .y(y)
              );
-
-   hopper #(.IMG_WIDTH(IMG_WIDTH),
-            .IMG_HEIGHT(IMG_HEIGHT),
-            .SWEEP_X(FEATURE_WIDTH),
-            .SWEEP_Y(FEATURE_HEIGHT))
-   hopper_i(
-            .clk(clk),
-            .rst(rst),
-            .hop_valid(sweeper_cfg_valid),
-            .hop_ready(sweeper_cfg_ready),
-            .x_hop(sweeper_x_start),
-            .y_hop(sweeper_y_start)
-            );
 
    eot_gen #(.FEATURE_WIDTH(FEATURE_WIDTH),
              .FEATURE_HEIGHT(FEATURE_HEIGHT),

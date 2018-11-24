@@ -6,6 +6,7 @@ module top
     parameter FEATURE_WIDTH = 25,
     parameter FEATURE_HEIGHT = 25,
     parameter PARALLEL_ROWS = 1,
+    parameter SCALE_NUM = 2,
     localparam DATA_MAX = 2**W_DATA-1,
     localparam W_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX),
     localparam W_SII = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX*DATA_MAX),
@@ -78,7 +79,8 @@ module top
                   .IMG_HEIGHT(IMG_HEIGHT),
                   .FEATURE_WIDTH(FEATURE_WIDTH),
                   .FEATURE_HEIGHT(FEATURE_HEIGHT),
-                  .PARALLEL_ROWS(PARALLEL_ROWS))
+                  .PARALLEL_ROWS(PARALLEL_ROWS),
+                  .SCALE_NUM(SCALE_NUM))
    data_fetcher_i(
                   .clk(clk),
                   .rst(rst),
