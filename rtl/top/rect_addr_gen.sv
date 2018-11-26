@@ -5,7 +5,7 @@ module rect_addr_gen
     parameter FEATURE_HEIGHT = 25,
     parameter FEATURE_NUM = 2913,
     parameter RECT_NUM = 0,
-    localparam W_ADDR_RECT = $clog2(FEATURE_NUM*4),
+    localparam W_ADDR_RECT = $clog2(FEATURE_NUM),
     localparam W_RECT = $clog2(FEATURE_WIDTH) // should be max(FEATURE_WIDTH, FEATURE_HEIGHT)
     )
    (
@@ -19,24 +19,112 @@ module rect_addr_gen
     );
 
    logic                rect_data_valid, rect_data_ready;
-   logic [W_RECT-1:0]   rect_data;
+   logic [4*W_RECT-1:0]   rect_data;
 
-   logic [W_ADDR_RECT-1:0] rect_addr_data;
+   logic [W_ADDR_RECT-1:0] rect_addr_data, rect_addr_next;
    logic                   rect_addr_valid, rect_addr_ready;
+   logic                   fifo_din_eot, fifo_din_valid, fifo_din_ready;
+   logic [W_ADDR-1:0]      fifo_din_data;
 
-   logic [1:0]             cnt_data_reg, cnt_data_next, cnt_data_inc;
-   logic [W_ADDR_RECT-1:0] cnt_eot_reg, cnt_eot_next;
-   logic [W_ADDR-1:0]      addr_data_reg, addr_data_next;
-   logic [W_ADDR_RECT-1:0] width_next, width_reg, mult;
+   logic [3:0]             state_reg, state_next;
 
-   logic                   addr_eot_o, addr_valid_o;
+   logic [W_ADDR-1:0]      A,B,C,D;
+   logic [W_RECT-1:0]      width, height;
 
-   logic [4:0]             state_reg, state_next;
+   assign A = rect_data[$left(rect_data):$left(rect_data)-2*W_RECT+1];
+   assign width = rect_data[$left(rect_data)-2*W_RECT+1:W_RECT];
+   assign height = rect_data[2*W_RECT-1:0];
+   assign B = A + width;
+   assign D = B + (FEATURE_WIDTH * height);
+   assign C = D - width;
 
-   assign rect_addr_data = cnt_data_reg + (cnt_eot_reg << 2);
-   assign cnt_data_inc = (cnt_data_reg < 3) ? cnt_data_reg + 1: 0;
+   always_comb
+     begin
+        state_next = 0;
+        rect_addr_next = rect_addr_data;
 
-   assign mult = rect_data * FEATURE_WIDTH;
+        case(state_reg)
+          0: begin
+             if(fifo_din_ready == 1)
+               state_next = 1;
+             else
+               state_next = 0;
+          end
+          1: begin
+             if(fifo_din_ready == 1)
+               state_next = 2;
+             else
+               state_next = 1;
+          end
+          2: begin
+             if(fifo_din_ready)
+               state_next = 3;
+             else
+               state_next = 2;
+          end
+          3: begin
+             if(fifo_din_ready) begin
+                state_next = 4;
+                rect_addr_next = rect_addr_data+1;
+             end
+             else
+               state_next = 3;
+          end
+          4: begin
+             if(fifo_din_ready) begin
+                state_next = 1;
+             end
+             else
+               state_next = 4;
+          end
+        endcase
+     end
+
+   always_comb
+     begin
+        rect_data_ready = 0;
+        rect_addr_valid = 0;
+        fifo_din_valid = 0;
+        fifo_din_data = 0;
+        fifo_din_eot = 0;
+
+        case(state_reg)
+          0: begin
+             rect_data_ready = 1;
+             rect_addr_valid = 1;
+          end
+          1: begin
+             fifo_din_data = A;
+             fifo_din_valid = 1;
+          end
+          2: begin
+             fifo_din_data = B;
+             fifo_din_valid = 1;
+          end
+          3: begin
+             fifo_din_data = D;
+             fifo_din_valid = 1;
+          end
+          4: begin
+             fifo_din_data = C;
+             fifo_din_valid = 1;
+             rect_data_ready = 1;
+             rect_addr_valid = 1;
+             fifo_din_eot = 1;
+          end
+        endcase
+     end
+
+   always_ff @(posedge clk)
+     begin
+        if(rst) begin
+           state_reg <= 0;
+           rect_addr_data <= 0;
+        end else begin
+           state_reg <= state_next;
+           rect_addr_data <= rect_addr_next;
+        end
+     end
 
    fifo #(
           .W_DATA(W_ADDR),
@@ -46,10 +134,10 @@ module rect_addr_gen
    rect0_fifo(
               .clk(clk),
               .rst(rst),
-              .din_valid(addr_valid_o),
-              .din_ready(fifo_addr_ready),
-              .din_data(addr_data_reg),
-              .din_eot(addr_eot_o),
+              .din_valid(fifo_din_valid),
+              .din_ready(fifo_din_ready),
+              .din_data(fifo_din_data),
+              .din_eot(fifo_din_eot),
               .dout_data(addr_data),
               .dout_valid(addr_valid),
               .dout_ready(addr_ready),
@@ -57,132 +145,7 @@ module rect_addr_gen
               );
 
 
-   always_comb
-     begin
-        state_next = 0;
-        cnt_data_next = cnt_data_reg;
-        cnt_eot_next = cnt_eot_reg;
-        addr_data_next = addr_data_reg;
-        addr_eot_o = 0;
-        width_next = width_reg;
-
-        case(state_reg)
-          0: begin
-             if(fifo_addr_ready)
-               state_next = 1;
-          end
-          1: begin
-             if(fifo_addr_ready)
-               state_next = 2;
-             cnt_data_next = cnt_data_inc;
-          end
-          2: begin
-             if(fifo_addr_ready)
-               state_next = 3;
-             cnt_data_next = cnt_data_inc;
-             addr_data_next = rect_data;
-          end
-          3: begin
-             if(fifo_addr_ready)
-               state_next = 4;
-             cnt_data_next = cnt_data_inc;
-             addr_data_next = addr_data_reg + mult;
-          end
-          4: begin
-             if(fifo_addr_ready)
-               state_next = 5;
-             cnt_data_next = cnt_data_inc;
-             cnt_eot_next = cnt_eot_reg + 1;
-             width_next = rect_data;
-             addr_data_next = addr_data_reg + rect_data;
-          end
-          5: begin
-             if(fifo_addr_ready)
-               state_next = 6;
-             addr_data_next = addr_data_reg + mult;
-          end
-          6: begin
-             if(fifo_addr_ready)
-               state_next = 7;
-             addr_data_next = addr_data_reg - width_reg;
-          end
-          7: begin
-             if(fifo_addr_ready)
-               state_next = 0;
-             else
-               state_next = 7;
-             addr_eot_o = 1;
-          end
-
-
-        endcase
-     end
-
-   always @(state_reg)
-     begin
-        rect_data_ready = 0;
-        rect_addr_valid = 0;
-        addr_valid_o = 0;
-
-        case(state_reg)
-          0: begin
-             rect_data_ready = 1;
-          end
-          1: begin
-             rect_addr_valid = 1;
-             rect_data_ready = 1;
-          end
-          2: begin
-             rect_addr_valid = 1;
-             rect_data_ready = 1;
-          end
-          3: begin
-             rect_addr_valid = 1;
-             rect_data_ready = 1;
-          end
-          4: begin
-             addr_valid_o = 1;
-             rect_addr_valid = 1;
-             rect_data_ready = 1;
-          end
-          5: begin
-             addr_valid_o = 1;
-             rect_addr_valid = 0;
-             rect_data_ready = 0;
-          end
-          6: begin
-             addr_valid_o = 1;
-             rect_addr_valid = 0;
-             rect_data_ready = 0;
-          end
-          7: begin
-             addr_valid_o = 1;
-             rect_addr_valid = 0;
-             rect_data_ready = 0;
-          end
-
-        endcase
-     end
-
-   always_ff @(posedge clk)
-     begin
-        if(rst) begin
-           cnt_data_reg <= 0;
-           cnt_eot_reg <= 0;
-           state_reg <= 0;
-           addr_data_reg <= 0;
-           width_reg <= 0;
-        end else begin
-           width_reg <= width_next;
-           addr_data_reg <= addr_data_next;
-           cnt_eot_reg <= cnt_eot_next;
-           cnt_data_reg <= cnt_data_next;
-           state_reg <= state_next;
-        end
-
-     end
-
-   rect #(.W_DATA(W_RECT),
+   rect #(.W_DATA(4*W_RECT),
           .W_ADDR(W_ADDR_RECT),
           .RECT_NUM(RECT_NUM))
    rect0_mem(

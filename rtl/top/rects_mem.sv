@@ -4,29 +4,34 @@ module rects_mem
     parameter FEATURE_WIDTH = 25,
     parameter FEATURE_HEIGHT = 25,
     parameter FEATURE_NUM = 2913,
-    localparam W_ADDR_RECT = $clog2(FEATURE_NUM*4),
+    parameter W_WEIGHT = 3,
+    localparam W_ADDR_RECT = $clog2(FEATURE_NUM),
     localparam W_ADDR_FEAT = $clog2(FEATURE_NUM),
     localparam W_RECT = $clog2(FEATURE_WIDTH) // should be max(FEATURE_WIDTH, FEATURE_HEIGHT)
     )
    (
-    input               clk,
-    input               rst,
+    input                 clk,
+    input                 rst,
 
-    output              addr_valid,
-    input               addr_ready,
-    output [W_ADDR-1:0] addr_data,
-    output [1:0]        addr_eot,
+    output                addr_valid,
+    input                 addr_ready,
+    output [W_ADDR-1:0]   addr0_data,
+    output [W_ADDR-1:0]   addr1_data,
+    output [W_ADDR-1:0]   addr2_data,
+    output [1:0]          addr_eot,
 
-    output              weight_valid,
-    input               weight_ready,
-    output [2:0]        weight
+    output                weight_valid,
+    input                 weight_ready,
+    output [W_WEIGHT-1:0] weight0,
+    output [W_WEIGHT-1:0] weight1,
+    output [W_WEIGHT-1:0] weight2
     );
 
    logic                rect0_addr_valid, rect0_addr_ready;
    logic                rect1_addr_valid, rect1_addr_ready;
    logic                rect2_addr_valid, rect2_addr_ready;
    logic [W_ADDR-1:0]   rect0_addr_data, rect1_addr_data, rect2_addr_data;
-   logic [1:0]          rect0_eot, rect1_eot, rect2_eot;
+   logic [1:0]          rect0_addr_eot, rect1_addr_eot, rect2_addr_eot;
 
    logic                weight0_addr_valid, weight1_addr_valid, weight2_addr_valid;
    logic                weight0_addr_ready, weight1_addr_ready, weight2_addr_ready;
@@ -34,141 +39,119 @@ module rects_mem
 
    logic                weight0_data_valid, weight1_data_valid, weight2_data_valid;
    logic                weight0_data_ready, weight1_data_ready, weight2_data_ready;
-   logic [2:0]          weight0_data, weight1_data, weight2_data;
+   logic [W_WEIGHT-1:0] weight0_data, weight1_data, weight2_data;
 
-   logic                weight_data_valid, weight_data_ready;
-   logic [2:0]          weight_data;
+   logic                weight_data_valid;
+   logic [W_WEIGHT-1:0] weight_data;
 
    logic [2:0]          rect_cnt_next, rect_cnt_reg;
-   logic                addr_valid_s, addr_ready_s;
-   logic [W_ADDR-1:0]   addr_data_s;
-   logic [1:0]          addr_eot_s;
 
    logic [W_ADDR_FEAT-1:0] feature_cnt_reg, feature_cnt_next;
 
-   assign addr_data = addr_data_s;
-   assign addr_eot = addr_eot_s;
-   assign addr_valid = addr_valid_s;
-   assign addr_ready_s = addr_ready;
+   assign feature_cnt_next = feature_cnt_reg + 1;
 
-   assign rect_cnt_next = (rect_cnt_reg < 2) ? rect_cnt_reg + 1 : 0;
-   assign feature_cnt_next = (rect_cnt_reg == 2 && addr_eot_s) ? feature_cnt_reg + 1: feature_cnt_reg;
+   assign weight0_data_ready = weight_ready;
+   assign weight1_data_ready = weight_ready;
+   assign weight2_data_ready = weight_ready;
 
-   assign weight_data_ready = weight_ready;
-   assign weight = weight_data;
-   assign weight_valid = weight_data_valid;
+   assign weight_valid = weight0_data_valid & weight1_data_valid & weight2_data_valid;
+
+   assign weight0_addr_data = feature_cnt_reg;
+   assign weight1_addr_data = feature_cnt_reg;
+   assign weight2_addr_data = feature_cnt_reg;
+
+   assign weight0_addr_valid = 1;
+   assign weight1_addr_valid = 1;
+   assign weight2_addr_valid = 1;
+
+   assign weight0 = weight0_data;
+   assign weight1 = weight1_data;
+   assign weight2 = weight2_data;
+
+   assign rect0_addr_ready = addr_ready;
+   assign rect1_addr_ready = addr_ready;
+   assign rect2_addr_ready = addr_ready;
+
+   assign addr0_data = rect0_addr_data;
+   assign addr1_data = rect1_addr_data;
+   assign addr2_data = rect2_addr_data;
+
+   assign addr_valid = rect0_addr_valid & rect1_addr_valid & rect2_addr_valid;
+   assign addr_eot[0] = rect0_addr_eot[0] & rect1_addr_eot[0] & rect2_addr_eot[0];
+
 
    always_comb
      begin
-        rect0_addr_ready = 0;
-        rect1_addr_ready = 0;
-        rect2_addr_ready = 0;
-        addr_valid_s = 0;
-        addr_data_s = 0;
-        addr_eot_s = 0;
-        weight0_data_ready = weight_data_ready;
-        weight1_data_ready = weight_data_ready;
-        weight2_data_ready = weight_data_ready;
-        weight0_addr_valid = 0;
-        weight1_addr_valid = 0;
-        weight2_addr_valid = 0;
-        weight0_addr_data = feature_cnt_reg;
-        weight1_addr_data = feature_cnt_reg;
-        weight2_addr_data = feature_cnt_reg;
-        weight_data = 0;
-        weight_data_valid = 0;
-
-        case(rect_cnt_reg)
-          0: begin
-             weight0_addr_valid = 1;
-             weight_data = weight0_data;
-             weight_data_valid = weight0_data_valid;
-             rect0_addr_ready = addr_ready;
-             addr_data_s = rect0_addr_data;
-             addr_valid_s = rect0_addr_valid;
-             addr_eot_s = rect0_addr_eot;
-          end
-          1: begin
-             weight_data_valid = weight1_data_valid;
-             weight1_addr_valid = 1;
-             weight_data = weight1_data;
-             rect1_addr_ready = addr_ready;
-             addr_data_s = rect1_addr_data;
-             addr_valid_s = rect1_addr_valid;
-             addr_eot_s = rect1_addr_eot;
-          end
-          2: begin
-             weight_data_valid = weight2_data_valid;
-             weight_data = weight2_data;
-             weight2_addr_valid = 1;
-             rect2_addr_ready = addr_ready;
-             addr_data_s = rect2_addr_data;
-             addr_valid_s = rect2_addr_valid;
-             addr_eot_s = rect2_addr_eot;
-          end
-        endcase
+        addr_eot[1] = 0;
+        if(feature_cnt_next== 9||feature_cnt_next== 25||feature_cnt_next== 52||feature_cnt_next== 84||feature_cnt_next== 136||feature_cnt_next== 189||feature_cnt_next== 251||feature_cnt_next== 323||feature_cnt_next== 406||feature_cnt_next== 497||feature_cnt_next== 596||feature_cnt_next== 711||feature_cnt_next== 838||feature_cnt_next== 973||feature_cnt_next== 1109||feature_cnt_next== 1246||feature_cnt_next== 1405||feature_cnt_next== 1560||feature_cnt_next== 1729||feature_cnt_next== 1925||feature_cnt_next== 2122||feature_cnt_next== 2303||feature_cnt_next== 2502||feature_cnt_next== 2713||feature_cnt_next== 2913) begin
+           addr_eot[1] = 1;
+        end
      end
+
+   always_ff @(posedge clk)
+     if(rst)
+       rect_cnt_reg <= 0;
+     else
+       rect_cnt_reg <= rect_cnt_next;
 
    always_ff @(posedge clk)
      begin
         if (rst) begin
            feature_cnt_reg <= 0;
-           rect_cnt_reg <= 0;
-        end else if(addr_eot_s[0]) begin
+        end else if(addr_eot[0]) begin
            feature_cnt_reg <= feature_cnt_next;
-           rect_cnt_reg <= rect_cnt_next;
         end
      end
 
 
    weight
      #(
-       .W_DATA(3),
+       .W_DATA(W_WEIGHT),
        .W_ADDR(12),
        .WEIGHT_NUM(0)
        )
-   weight0(
-           .clk(clk),
-           .rst(rst),
-           .addr1_valid(weight0_addr_valid),
-           .addr1_ready(weight0_addr_ready),
-           .addr1_data(weight0_addr_data),
-           .data1_valid(weight0_data_valid),
-           .data1_ready(weight0_data_ready),
-           .data1(weight0_data)
-           );
+   weight0_mem(
+               .clk(clk),
+               .rst(rst),
+               .addr1_valid(weight0_addr_valid),
+               .addr1_ready(weight0_addr_ready),
+               .addr1_data(weight0_addr_data),
+               .data1_valid(weight0_data_valid),
+               .data1_ready(weight0_data_ready),
+               .data1(weight0_data)
+               );
    weight
      #(
-       .W_DATA(3),
+       .W_DATA(W_WEIGHT),
        .W_ADDR(12),
        .WEIGHT_NUM(1)
        )
-   weight1(
-           .clk(clk),
-           .rst(rst),
-           .addr1_valid(weight1_addr_valid),
-           .addr1_ready(weight1_addr_ready),
-           .addr1_data(weight1_addr_data),
-           .data1_valid(weight1_data_valid),
-           .data1_ready(weight1_data_ready),
-           .data1(weight1_data)
-           );
+   weight1_mem(
+               .clk(clk),
+               .rst(rst),
+               .addr1_valid(weight1_addr_valid),
+               .addr1_ready(weight1_addr_ready),
+               .addr1_data(weight1_addr_data),
+               .data1_valid(weight1_data_valid),
+               .data1_ready(weight1_data_ready),
+               .data1(weight1_data)
+               );
 
    weight
      #(
-       .W_DATA(3),
+       .W_DATA(W_WEIGHT),
        .W_ADDR(12),
        .WEIGHT_NUM(2)
        )
-   weight2(
-           .clk(clk),
-           .rst(rst),
-           .addr1_valid(weight2_addr_valid),
-           .addr1_ready(weight2_addr_ready),
-           .addr1_data(weight2_addr_data),
-           .data1_valid(weight2_data_valid),
-           .data1_ready(weight2_data_ready),
-           .data1(weight2_data)
+   weight2_mem(
+               .clk(clk),
+               .rst(rst),
+               .addr1_valid(weight2_addr_valid),
+               .addr1_ready(weight2_addr_ready),
+               .addr1_data(weight2_addr_data),
+               .data1_valid(weight2_data_valid),
+               .data1_ready(weight2_data_ready),
+               .data1(weight2_data)
            );
 
    rect_addr_gen

@@ -144,7 +144,7 @@ class CascadeClass(object):
         print(f"\n#endif", file=f)
 
     def dumpStageVerilogROM(self, directory, dual_port=False, block_ram=False):
-        names = ["stage_thresholds"]
+        names = ["stageThreshold"]
         if (directory[-1] != '/'):
             directory = directory + '/'
         if dual_port is True:
@@ -172,46 +172,49 @@ class CascadeClass(object):
             block_ram=block_ram)
 
     def dumpFeatureVerilogROM(self, directory, dual_port=False,
-                              block_ram=False):
-        for s, stage in enumerate(self.stages):
-            names = [f"leafVal0_s{s}", f"leafVal1_s{s}", f"feature_thresholds_s{s}"]
-            leafVal1 = []
-            leafVal0 = []
-            threshold = []
-            feature_num = stage.maxWeakCount
+                              block_ram=True):
+        names = ["leafVal0", "leafVal1", "featureThreshold"]
+        leafVal1 = []
+        leafVal0 = []
+        threshold = []
+        for stage in self.stages[0:5]:
             for feature in stage.features:
                 leafVal1.append(feature.failVal)
                 leafVal0.append(feature.passVal)
                 threshold.append(feature.threshold)
 
-            data_l = [leafVal0, leafVal1, threshold]
+        data_l = [leafVal0, leafVal1, threshold]
 
-            max_leafVal = max(
-                max(abs(max(leafVal1)), abs(min(leafVal1))),
-                max(abs(max(leafVal0)), abs(min(leafVal0))))
-            max_threshold = max(abs(max(threshold)), abs(min(threshold)))
-            w_data_l = [
-                math.ceil(math.log(max_leafVal, 2)) + 1,
-                math.ceil(math.log(max_leafVal, 2)) + 1,
-                math.ceil(math.log(max_threshold, 2) + 1)
-            ]
-            w_addr_l = [math.ceil(math.log(feature_num, 2))] * 3
+        max_leafVal = max(
+            max(abs(max(leafVal1)), abs(min(leafVal1))),
+            max(abs(max(leafVal0)), abs(min(leafVal0))))
+        max_threshold = max(abs(max(threshold)), abs(min(threshold)))
+        w_data_l = [
+            math.ceil(math.log(max_leafVal, 2)) + 1,
+            math.ceil(math.log(max_leafVal, 2)) + 1,
+            math.ceil(math.log(max_threshold, 2) + 1)
+        ]
+        w_addr_l = [math.ceil(math.log(len(data_l[0]), 2))] * 3
 
-            dumpVerilogROM(
-                data_l,
-                w_addr_l,
-                w_data_l,
-                names,
-                directory,
-                dual_port=dual_port,
-                block_ram=block_ram)
+        dumpVerilogROM(
+            data_l,
+            w_addr_l,
+            w_data_l,
+            names,
+            directory,
+            dual_port=dual_port,
+            block_ram=block_ram)
 
     def dumpRectVerilogROM(self, directory, dual_port=False, block_ram=False):
-        for s, stage in enumerate(self.stages):
-            for r in range(3):
-                names = [f"rect{r}_s{s}", f"weight{r}_s{s}"]
-                rect_l = []
-                weight_l = []
+        for r in range(3):
+            names = [f"rect{r}", f"weights{r}"]
+            rect_l = []
+            weight_l = []
+            max_feature_size = max(self.featureSize)
+            w_rect = math.ceil(math.log(max_feature_size, 2))
+            w_data_l = [4*w_rect, 3]
+
+            for s, stage in enumerate(self.stages[0:5]):
                 for feature in stage.features:
                     try:
                         A = [
@@ -235,16 +238,19 @@ class CascadeClass(object):
                     width = D[0] - A[0]
                     height = D[1] - A[1]
 
-                    rect_l.extend((A[0], A[1], width, height))
+                    rect_ccat = (A[0] + A[1] * (self.featureSize[1] + 1)) << (w_rect*2)
+                    rect_ccat |= width << w_rect
+                    rect_ccat |= height
+                    # rect_l.extend((A[0], A[1], width, height))
+                    rect_l.append(rect_ccat)
                     weight_l.append(weight)
 
                 data_l = [rect_l, weight_l]
-                max_feature_size = max(self.featureSize)
                 w_addr_l = [
-                    math.ceil(math.log(len(rect_l) * 4, 2)),
+                    math.ceil(math.log(len(rect_l), 2)),
                     math.ceil(math.log(len(weight_l), 2))
                 ]
-                w_data_l = [math.ceil(math.log(max_feature_size, 2)), 3]
+
 
                 dumpVerilogROM(
                     data_l,
@@ -345,8 +351,73 @@ if __name__ == "__main__":
 
     cascade = createCascade(doc)
 
-    cascade.dumpFeatureVerilogROM("VerilogROM/leafVals")
-    cascade.dumpRectVerilogROM("VerilogROM/rects/")
-    cascade.dumpStageVerilogROM("VerilogROM/")
+    # cnt = 0
+    # for stage in cascade.stages[:2]:
+    #     print("##########################")
+    #     for feature in stage.features:
+    #         print(cnt)
+    #         Ax = feature.rects[0].A['x']
+    #         Ay = feature.rects[0].A['y']
+    #         Bx = feature.rects[0].B['x']
+    #         By = feature.rects[0].B['y']
+    #         Cx = feature.rects[0].C['x']
+    #         Cy = feature.rects[0].C['y']
+    #         Dx = feature.rects[0].D['x']
+    #         Dy = feature.rects[0].D['y']
+    #         A = Ax + Ay*25
+    #         B = Bx + By*25
+    #         C = Cx + Cy*25
+    #         D = Dx + Dy*25
+    #         weight = feature.rects[0].weight//4096
+
+    #         # print(feature.rects[0].__dict__)
+    #         print(A,B,D,C, weight)
+    #         Ax = feature.rects[1].A['x']
+    #         Ay = feature.rects[1].A['y']
+    #         Bx = feature.rects[1].B['x']
+    #         By = feature.rects[1].B['y']
+    #         Cx = feature.rects[1].C['x']
+    #         Cy = feature.rects[1].C['y']
+    #         Dx = feature.rects[1].D['x']
+    #         Dy = feature.rects[1].D['y']
+    #         A = Ax + Ay*25
+    #         B = Bx + By*25
+    #         C = Cx + Cy*25
+    #         D = Dx + Dy*25
+    #         weight = feature.rects[1].weight//4096
+
+    #         # print(feature.rects[0].__dict__)
+    #         print(A,B,D,C, weight)
+    #         try:
+    #             Ax = feature.rects[2].A['x']
+    #             Ay = feature.rects[2].A['y']
+    #             Bx = feature.rects[2].B['x']
+    #             By = feature.rects[2].B['y']
+    #             Cx = feature.rects[2].C['x']
+    #             Cy = feature.rects[2].C['y']
+    #             Dx = feature.rects[2].D['x']
+    #             Dy = feature.rects[2].D['y']
+    #             A = Ax + Ay*25
+    #             B = Bx + By*25
+    #             C = Cx + Cy*25
+    #             D = Dx + Dy*25
+    #             weight = feature.rects[2].weight//4096
+    #         except:
+    #             A = 0
+    #             B = 0
+    #             C = 0
+    #             D = 0
+    #             weight = 0
+
+    #         # print(feature.rects[0].__dict__)
+    #         print(A,B,D,C, weight)
+    #         print("----------------")
+    #         cnt += 1
+
+
+
+    cascade.dumpFeatureVerilogROM("rtl/top/rom/")
+    cascade.dumpRectVerilogROM("rtl/top/rom/")
+    cascade.dumpStageVerilogROM("rtl/top/rom/")
 
     # cascade.dumpCpp(fn)
