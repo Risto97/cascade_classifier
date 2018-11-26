@@ -115,7 +115,7 @@ class ImageClass(object):
         pass
 
 if __name__ == "__main__":
-    img_fn = 'datasets/rtl_small.pgm'
+    img_fn = 'datasets/rtl2.jpg'
     img = ImageClass()
     img.loadImage(img_fn)
 
