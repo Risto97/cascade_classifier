@@ -40,7 +40,7 @@ module window_buffer
    assign dout1_data = dout1_buff;
    assign dout2_data = dout2_buff;
 
-   assign dout_valid = dout_valid_reg & handshake_reg;
+   assign dout_valid = dout_valid_reg & handshake_reg & full;
    assign addr_ready = addr_ready_reg;
 
    assign wr_cnt_next = (!din_eot[1] & !full) ? (wr_cnt_reg+1):

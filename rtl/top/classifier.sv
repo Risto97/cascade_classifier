@@ -12,7 +12,7 @@ module classifier
     parameter MAX_WEAKCOUNT = 211,
     parameter W_WEIGHT = 3,
     parameter W_STAGE_THRESHOLD = 11,
-    localparam W_RECT_SUM = $clog2(4*2**W_DATA) + W_WEIGHT,
+    localparam W_RECT_SUM = $clog2(4*2**W_DATA) + W_WEIGHT + $clog2(4096),
     localparam W_ADDR_STAGE = $clog2(STAGE_NUM),
     localparam W_FEATURE_ACCUM = $clog2(MAX_WEAKCOUNT) + W_LEAF,
     localparam W_ADDR_RECT = $clog2(FEATURE_NUM),
@@ -136,7 +136,7 @@ module classifier
                .result(result)
                );
 
-   assign internal_rst = (result_valid && !result) ? 1 : 0;
+   assign internal_rst = result_valid ? 1 : 0;
 
    generate
       genvar              i;

@@ -177,7 +177,7 @@ class CascadeClass(object):
         leafVal1 = []
         leafVal0 = []
         threshold = []
-        for stage in self.stages[0:5]:
+        for stage in self.stages:
             for feature in stage.features:
                 leafVal1.append(feature.failVal)
                 leafVal0.append(feature.passVal)
@@ -214,7 +214,7 @@ class CascadeClass(object):
             w_rect = math.ceil(math.log(max_feature_size, 2))
             w_data_l = [4*w_rect, 3]
 
-            for s, stage in enumerate(self.stages[0:5]):
+            for s, stage in enumerate(self.stages):
                 for feature in stage.features:
                     try:
                         A = [

@@ -43,7 +43,7 @@ module stage_sum
              result_valid_o = 1;
              din_ready_o = 1;
           end
-          else if(stage_cnt_reg == STAGE_NUM-1) begin
+          else if(stage_cnt_reg == STAGE_NUM) begin
              result_o = 1;
              result_valid_o = 1;
              din_ready_o = 1;

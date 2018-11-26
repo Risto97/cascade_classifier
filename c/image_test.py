@@ -9,7 +9,7 @@ libname = 'cascade.so'
 libdir = './'
 lib = ctl.load_library(libname, libdir)
 
-filenames = [img for img in glob.glob("../datasets/testset/*jpg")]
+filenames = [img for img in glob.glob("../datasets/rtl2.jpg")]
 img_num = len(filenames)
 
 en_hit_stat = 1
@@ -37,7 +37,7 @@ for img_index, img_fn in enumerate(filenames):
     res_num = 0
 
     start_time = time.time()
-    res_num = detect(img, img.shape[0], img.shape[1], res, 1, hit, 1.2)
+    res_num = detect(img, img.shape[0], img.shape[1], res, 1, hit, 1.33)
     stop_time = time.time()
     exec_time += stop_time - start_time
 
@@ -56,6 +56,6 @@ print("--- TOTAl Time --------- %s s ---" % (exec_time))
 print("--- AVG Time --------- %s ms ---" % (exec_time / img_num * 1000))
 print("---- FPS ------- %.2f  fps ----" % float(img_num / float(exec_time)))
 
-# cv2.imshow('img', img_clr)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+cv2.imshow('img', img_clr)
+cv2.waitKey(0)
+cv2.destroyAllWindows()

@@ -2,7 +2,7 @@ module rect_sum
   #(
     parameter W_DATA = 18,
     parameter W_WEIGHT = 3,
-    parameter W_DOUT = $clog2(4*2**W_DATA) + W_WEIGHT
+    parameter W_DOUT = $clog2(4*2**W_DATA) + W_WEIGHT + $clog2(4096)
     )
    (
     input                       clk,
@@ -27,12 +27,12 @@ module rect_sum
    logic                       dout_eot_reg, dout_eot_next;
 
    assign din_ready = dout_ready;
-   assign weight_ready = dout_ready;
+   // assign weight_ready = dout_ready;
    assign dout_eot_next = (dot_cnt_reg == 3) ? 1 : 0;
    assign dout_eot = dout_eot_reg;
    assign dout_valid = dout_eot_reg;
 
-   assign dout_data = (dout_eot_reg) ? (weight * data_accum_reg) : 0; // DELETE THIS CONDITIONAL ASSIGNMENT AFTER TEST
+   assign dout_data = (dout_eot_reg) ? (4096 * weight * data_accum_reg) : 0; // DELETE THIS CONDITIONAL ASSIGNMENT AFTER TEST
    assign weight_ready = (weight_valid && dout_eot_next) ? 1 : 0;
 
    always_comb
