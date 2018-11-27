@@ -29,17 +29,15 @@ module leafVal
    logic                       leaf1_data_valid, leaf1_data_ready;
 
    logic                       addr_ready_o, data_valid_o;
-   logic [W_LEAF-1:0]          data_o;
 
    assign addr_ready = addr_ready_o;
    assign data_valid = data_valid_o;
-   assign data = data_o;
+   assign data = (leaf_num) ? leaf1_data : leaf0_data;
 
    always_comb
      begin
         addr_ready_o = 0;
         data_valid_o = 0;
-        data_o = 0;
         leaf0_addr_valid = addr_valid;
         leaf1_addr_valid = addr_valid;
         leaf1_addr = addr_data;
@@ -47,25 +45,22 @@ module leafVal
         leaf0_data_ready = data_ready;
         leaf1_data_ready = data_ready;
 
-        if(addr_valid)
-          case(leaf_num)
-            0: begin
-               leaf0_addr = addr_data;
-               leaf0_addr_valid = addr_valid;
-               leaf0_data_ready = data_ready;
-               addr_ready_o = leaf0_addr_ready;
-               data_valid_o = leaf0_data_valid;
-               data_o = leaf0_data;
-            end
-            1: begin
-               leaf1_addr = addr_data;
-               leaf1_addr_valid = addr_valid;
-               leaf1_data_ready = data_ready;
-               addr_ready_o = leaf1_addr_ready;
-               data_valid_o = leaf1_data_valid;
-               data_o = leaf1_data;
-            end
-          endcase
+        case(leaf_num)
+          0: begin
+             leaf0_addr = addr_data;
+             leaf0_addr_valid = addr_valid;
+             leaf0_data_ready = data_ready;
+             addr_ready_o = leaf0_addr_ready;
+             data_valid_o = leaf0_data_valid;
+          end
+          1: begin
+             leaf1_addr = addr_data;
+             leaf1_addr_valid = addr_valid;
+             leaf1_data_ready = data_ready;
+             addr_ready_o = leaf1_addr_ready;
+             data_valid_o = leaf1_data_valid;
+          end
+        endcase
      end
 
    passVal #(.W_DATA(W_LEAF), .W_ADDR(W_ADDR))

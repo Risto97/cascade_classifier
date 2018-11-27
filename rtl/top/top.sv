@@ -6,6 +6,7 @@ module top
     parameter FEATURE_WIDTH = 25,
     parameter FEATURE_HEIGHT = 25,
     parameter PARALLEL_ROWS = 1,
+    parameter SCALE_NUM = 2,
     localparam DATA_MAX = 2**W_DATA-1,
     localparam W_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX),
     localparam W_SII = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX*DATA_MAX),
@@ -51,11 +52,11 @@ module top
 
    logic               ii_dout_valid;
    logic               ii_dout_ready;
-   logic [W_II-1:0]    ii_dout_data;
+   logic [W_II-1:0]    ii_dout0_data, ii_dout1_data, ii_dout2_data;
 
    logic               ii_addr_valid;
    logic               ii_addr_ready;
-   logic [W_ADDR_II-1:0] ii_addr_data;
+   logic [W_ADDR_II-1:0] ii_addr0_data, ii_addr1_data, ii_addr2_data;
 
    logic                 stddev_valid;
    logic                 stddev_ready;
@@ -78,7 +79,8 @@ module top
                   .IMG_HEIGHT(IMG_HEIGHT),
                   .FEATURE_WIDTH(FEATURE_WIDTH),
                   .FEATURE_HEIGHT(FEATURE_HEIGHT),
-                  .PARALLEL_ROWS(PARALLEL_ROWS))
+                  .PARALLEL_ROWS(PARALLEL_ROWS),
+                  .SCALE_NUM(SCALE_NUM))
    data_fetcher_i(
                   .clk(clk),
                   .rst(rst),
@@ -165,10 +167,14 @@ module top
                    .din_eot(ii_buffer_eot),
                    .addr_valid(ii_addr_valid),
                    .addr_ready(ii_addr_ready),
-                   .addr_data(ii_addr_data),
+                   .addr0_data(ii_addr0_data),
+                   .addr1_data(ii_addr1_data),
+                   .addr2_data(ii_addr2_data),
                    .dout_valid(ii_dout_valid),
                    .dout_ready(ii_dout_ready),
-                   .dout_data(ii_dout_data)
+                   .dout0_data(ii_dout0_data),
+                   .dout1_data(ii_dout1_data),
+                   .dout2_data(ii_dout2_data)
                    );
 
    classifier #(.W_DATA(W_II),
@@ -177,11 +183,15 @@ module top
                 .clk(clk),
                 .rst(rst),
                 .din_valid(ii_dout_valid),
-                .din_data(ii_dout_data),
                 .din_ready(ii_dout_ready),
+                .din0_data(ii_dout0_data),
+                .din1_data(ii_dout1_data),
+                .din2_data(ii_dout2_data),
                 .addr_valid(ii_addr_valid),
                 .addr_ready(ii_addr_ready),
-                .addr_data(ii_addr_data),
+                .addr0_data(ii_addr0_data),
+                .addr1_data(ii_addr1_data),
+                .addr2_data(ii_addr2_data),
                 .result_valid(result_valid),
                 .result_ready(result_ready),
                 .result_data(result_data),

@@ -1,6 +1,6 @@
 module rect
   #(
-    parameter W_DATA = 5,
+    parameter W_DATA = 20,
     parameter W_ADDR = 14,
     parameter RECT_NUM = 0
     )

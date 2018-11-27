@@ -120,7 +120,7 @@ if __name__ == "__main__":
     img.loadImage(img_fn)
 
     # img.dumpArrayC("c/slika.hpp")
-    img.dumpVerilogROM("rtl/top/bram_rom.sv")
+    img.dumpVerilogROM("rtl/top/rom/bram_rom.sv")
 
     # import time
     # start_time = time.time()

@@ -51,7 +51,7 @@ module passVal
             .data1_i(data1_i)
             );
 
-   passVal_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
+   leafVal0_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
    passVal_i(
                       .clk(clk),
                       .rst(rst),

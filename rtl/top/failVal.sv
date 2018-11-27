@@ -51,7 +51,7 @@ module failVal
             .data1_i(data1_i)
             );
 
-   failVal_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
+   leafVal1_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
    failVal_i(
              .clk(clk),
              .rst(rst),

@@ -10,11 +10,7 @@ module weights0_rom
      input en1,
      input [W_ADDR-1:0] addr1,
      output reg [W_DATA-1:0] data1
-
-     );
-
-     (* rom_style = "block" *)
-
+    );
      always_ff @(posedge clk)
         begin
            if(en1)

@@ -17,23 +17,30 @@ module window_buffer
 
     input               addr_valid,
     output              addr_ready,
-    input [W_ADDR-1:0]  addr_data,
+    input [W_ADDR-1:0]  addr0_data,
+    input [W_ADDR-1:0]  addr1_data,
+    input [W_ADDR-1:0]  addr2_data,
 
     output              dout_valid,
     input               dout_ready,
-    output [W_DATA-1:0] dout_data
+    output [W_DATA-1:0] dout0_data,
+    output [W_DATA-1:0] dout1_data,
+    output [W_DATA-1:0] dout2_data
     );
 
    logic [W_DATA-1:0]   mem [DEPTH-1:0];
 
    logic [W_ADDR-1:0]   wr_cnt_next, wr_cnt_reg;
    logic                full, full_next;
-   logic [W_DATA-1:0]   dout_buff;
+   logic [W_DATA-1:0]   dout0_buff, dout1_buff, dout2_buff;
    logic                dout_valid_reg, addr_ready_reg;
    logic                handshake_reg;
 
-   assign dout_data = dout_buff;
-   assign dout_valid = dout_valid_reg & handshake_reg;
+   assign dout0_data = dout0_buff;
+   assign dout1_data = dout1_buff;
+   assign dout2_data = dout2_buff;
+
+   assign dout_valid = dout_valid_reg & handshake_reg & full;
    assign addr_ready = addr_ready_reg;
 
    assign wr_cnt_next = (!din_eot[1] & !full) ? (wr_cnt_reg+1):
@@ -47,7 +54,9 @@ module window_buffer
      begin
         if(full & addr_valid)
           begin
-             dout_buff <= mem[addr_data];
+             dout0_buff <= mem[addr0_data];
+             dout1_buff <= mem[addr1_data];
+             dout2_buff <= mem[addr2_data];
              dout_valid_reg <= addr_valid & full;
           end
      end
