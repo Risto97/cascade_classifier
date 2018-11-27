@@ -47,7 +47,8 @@ module fifo
    assign dout_eot = mem_eot[rd_pointer_reg[AW-1:0]];
 
    assign dout_valid = ~empty;
-   assign din_ready = dout_ready | ~full;
+   // assign din_ready = dout_ready | ~full;
+   assign din_ready = ~full; // ?????? CHECK
 
 
    always_ff @(posedge clk)

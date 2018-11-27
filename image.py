@@ -52,12 +52,12 @@ class ImageClass(object):
         f = open(fn, "w")
         WIDTH = img.img_size[1]
         HEIGHT = img.img_size[0]
-        print(f"#ifndef SLIKA_HPP", file=f)
-        print(f"#define SLIKA_HPP\n", file=f)
-        print(f"#include <stdint.h>\n", file=f)
+        print(f"#ifndef IMG_HPP", file=f)
+        print(f"#define IMG_HPP\n", file=f)
+        # print(f"#include <stdint.h>\n", file=f)
         print(f"const int WIDTH = {WIDTH};", file=f)
         print(f"const int HEIGHT = {HEIGHT};\n", file=f)
-        print(f"uint8_t img[{HEIGHT}][{WIDTH}]=", end='', file=f)
+        print(f"unsigned char img[{HEIGHT}][{WIDTH}]=", end='', file=f)
         print("{", file=f)
 
         for y in range(HEIGHT):
@@ -69,7 +69,7 @@ class ImageClass(object):
                     print(f"{img.img[y][x]}", end='', file=f)
 
             if y < HEIGHT - 1:
-                print("},", end="\n\n", file=f)
+                print("},", end="\n", file=f)
             else:
                 print("}\n};", file=f)
 
@@ -119,8 +119,14 @@ if __name__ == "__main__":
     img = ImageClass()
     img.loadImage(img_fn)
 
-    # img.dumpArrayC("c/slika.hpp")
-    img.dumpVerilogROM("rtl/top/rom/bram_rom.sv")
+    # print(img.img.shape)
+    # for y in range(img.img.shape[0]):
+    #     for x in range(img.img.shape[1]):
+    #         img.img[y][x] = x+1
+
+
+    img.dumpArrayC("rtl/top/img.hpp")
+    # img.dumpVerilogROM("rtl/top/rom/bram_rom.sv")
 
     # import time
     # start_time = time.time()

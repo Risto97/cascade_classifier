@@ -49,14 +49,12 @@ module leafVal
           0: begin
              leaf0_addr = addr_data;
              leaf0_addr_valid = addr_valid;
-             leaf0_data_ready = data_ready;
              addr_ready_o = leaf0_addr_ready;
              data_valid_o = leaf0_data_valid;
           end
           1: begin
              leaf1_addr = addr_data;
              leaf1_addr_valid = addr_valid;
-             leaf1_data_ready = data_ready;
              addr_ready_o = leaf1_addr_ready;
              data_valid_o = leaf1_data_valid;
           end

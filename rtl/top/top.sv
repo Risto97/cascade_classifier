@@ -16,13 +16,17 @@ module top
     localparam W_Y = $clog2(IMG_HEIGHT)
     )
    (
-    input            clk,
-    input            rst,
+    input              clk,
+    input              rst,
 
-    output           detect_pos_valid,
-    input            detect_pos_ready,
-    output [W_Y-1:0] detect_pos_y,
-    output [W_X-1:0] detect_pos_x
+    input              img_valid,
+    output             img_ready,
+    input [W_DATA-1:0] img_data,
+    input              img_eot,
+
+    output             detect_pos_valid,
+    input              detect_pos_ready,
+    output [$clog2(IMG_WIDTH)+$clog2(IMG_HEIGHT)-1:0]   detect_pos
    );
 
    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT);
@@ -46,6 +50,7 @@ module top
    logic                ii_stddev_valid, ii_stddev_ready;
    logic [1:0]          ii_stddev_eot;
 
+
    logic               sii_valid;
    logic               sii_ready;
    logic [W_SII-1:0]   sii_data;
@@ -66,17 +71,29 @@ module top
    logic                 window_pos_valid, window_pos_ready;
    logic [W_X-1:0]       window_pos_x;
    logic [W_Y-1:0]       window_pos_y;
+   logic [W_Y-1:0]       detect_pos_y;
+   logic [W_X-1:0]       detect_pos_x;
 
-   rom_mem #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
-   rom(
+   assign detect_pos = {detect_pos_y, detect_pos_x};
+
+   image_buffer #(
+                  .W_DATA(W_DATA),
+                  .IMG_WIDTH(IMG_WIDTH),
+                  .IMG_HEIGHT(IMG_HEIGHT)
+                  )
+   img_ram(
        .clk(clk),
        .rst(rst),
-       .addr1_valid(addr1_valid),
-       .addr1_ready(addr1_ready),
-       .addr1_data(addr1_data),
-       .data1_valid(data1_valid),
-       .data1_ready(data1_ready),
-       .data1(data1)
+       .din_valid(img_valid),
+       .din_ready(img_ready),
+       .din_data(img_data),
+       .din_eot(img_eot),
+       .addr_valid(addr1_valid),
+       .addr_ready(addr1_ready),
+       .addr_data(addr1_data),
+       .dout_valid(data1_valid),
+       .dout_ready(data1_ready),
+       .dout_data(data1)
        );
 
    data_fetcher #(.W_DATA(W_DATA),
