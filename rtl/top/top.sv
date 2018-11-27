@@ -11,17 +11,18 @@ module top
     localparam W_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX),
     localparam W_SII = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX*DATA_MAX),
     localparam W_STDDEV = $clog2(2**W_SII) + $clog2((FEATURE_HEIGHT-1)*(FEATURE_WIDTH-1)),
-    localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT)
+    localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT),
+    localparam W_X = $clog2(IMG_WIDTH),
+    localparam W_Y = $clog2(IMG_HEIGHT)
     )
    (
-    input  clk,
-    input  rst,
+    input            clk,
+    input            rst,
 
-
-    output result_valid,
-    input  result_ready,
-    output result_data
-
+    output           detect_pos_valid,
+    input            detect_pos_ready,
+    output [W_Y-1:0] detect_pos_y,
+    output [W_X-1:0] detect_pos_x
    );
 
    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT);
@@ -62,6 +63,10 @@ module top
    logic                 stddev_ready;
    logic [W_STDDEV-1:0]  stddev_data;
 
+   logic                 window_pos_valid, window_pos_ready;
+   logic [W_X-1:0]       window_pos_x;
+   logic [W_Y-1:0]       window_pos_y;
+
    rom_mem #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
    rom(
        .clk(clk),
@@ -93,7 +98,11 @@ module top
                   .dout_valid(df_dout_valid),
                   .dout_ready(df_dout_ready),
                   .dout_data(df_dout_data),
-                  .dout_eot(df_dout_eot)
+                  .dout_eot(df_dout_eot),
+                  .window_pos_valid(window_pos_valid),
+                  .window_pos_ready(window_pos_ready),
+                  .window_pos_y(window_pos_y),
+                  .window_pos_x(window_pos_x)
                   );
 
    ii_sii_gen #(.W_DATA(W_DATA),
@@ -199,5 +208,26 @@ module top
                 .stddev_ready(stddev_ready),
                 .stddev_data(stddev_data)
                 );
+
+   window_pos
+     #(
+       .IMG_WIDTH(IMG_WIDTH),
+       .IMG_HEIGHT(IMG_HEIGHT)
+       )
+   window_pos_i (
+                 .clk(clk),
+                 .rst(rst),
+                 .window_pos_valid(window_pos_valid),
+                 .window_pos_ready(window_pos_ready),
+                 .window_pos_x(window_pos_x),
+                 .window_pos_y(window_pos_y),
+                 .result_valid(result_valid),
+                 .result_ready(result_ready),
+                 .result(result_data),
+                 .detect_pos_valid(detect_pos_valid),
+                 .detect_pos_ready(detect_pos_ready),
+                 .detect_pos_y(detect_pos_y),
+                 .detect_pos_x(detect_pos_x)
+                 );
 
 endmodule: top

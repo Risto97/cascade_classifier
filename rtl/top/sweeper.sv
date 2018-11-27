@@ -13,6 +13,11 @@ module sweeper
     input            clk,
     input            rst,
 
+    output           window_pos_valid,
+    input            window_pos_ready,
+    output [W_Y-1:0] window_pos_y,
+    output [W_X-1:0] window_pos_x,
+
     output           addr_valid,
     input            addr_ready,
     output [W_X-1:0] x,
@@ -30,8 +35,23 @@ module sweeper
 
    logic [21:0]                ratio_x[SCALE_NUM-1:0];
    logic [21:0]                ratio_y[SCALE_NUM-1:0];
-   // assign ratio_x[0] = 65537;
-   // assign ratio_x[1] = 89368;
+
+   logic                       window_pos_valid_reg;
+   assign window_pos_x = hop_x_reg;
+   assign window_pos_y = hop_y_reg;
+   assign window_pos_valid = window_pos_valid_reg;
+   always_ff @(posedge clk)
+     begin
+        if(rst)
+          window_pos_valid_reg <= 1;
+        else begin
+           if(window_pos_ready)
+             window_pos_valid_reg <= 0;
+           else
+             window_pos_valid_reg <= 1;
+        end
+     end
+
 
    generate
       genvar                   i;

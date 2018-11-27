@@ -7,7 +7,9 @@ module data_fetcher
     parameter FEATURE_HEIGHT = 24,
     parameter PARALLEL_ROWS = 1,
     parameter SCALE_NUM = 2,
-    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT)
+    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT),
+    localparam W_X = $clog2(IMG_WIDTH),
+    localparam W_Y = $clog2(IMG_HEIGHT)
     )
    (
     input               clk,
@@ -24,11 +26,14 @@ module data_fetcher
     output              dout_valid,
     input               dout_ready,
     output [W_DATA-1:0] dout_data,
-    output [1:0]        dout_eot
+    output [1:0]        dout_eot,
+
+    output              window_pos_valid,
+    input               window_pos_ready,
+    output [W_X-1:0]    window_pos_x,
+    output [W_Y-1:0]    window_pos_y
     );
 
-   localparam W_X = $clog2(IMG_WIDTH);
-   localparam W_Y = $clog2(IMG_HEIGHT);
 
    logic [W_X-1:0]      x;
    logic [W_Y-1:0]      y;
@@ -62,6 +67,10 @@ module data_fetcher
    sweeper_i(
              .clk(clk),
              .rst(rst),
+             .window_pos_valid(window_pos_valid),
+             .window_pos_ready(window_pos_ready),
+             .window_pos_y(window_pos_y),
+             .window_pos_x(window_pos_x),
              .addr_valid(sweeper_addr_valid),
              .addr_ready(sweeper_addr_ready),
              .x(x),

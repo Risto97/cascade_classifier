@@ -33,9 +33,10 @@ int main(int argc, char **argv, char **env){
     for (clk=0; clk<2; clk++){
       if(i>3 && clk == 1){
 
-        top->result_ready = 1;
+        // top->result_ready = 1;
         // top->stddev_ready = 1;
         // top->ii_addr_valid = 1;
+        top->detect_pos_ready = 1;
 
         // if(top->ii_addr_ready){
           // top->ii_addr_valid = 1;
