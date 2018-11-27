@@ -41,10 +41,6 @@ module rects_mem
    logic                weight0_data_ready, weight1_data_ready, weight2_data_ready;
    logic [W_WEIGHT-1:0] weight0_data, weight1_data, weight2_data;
 
-   logic                weight_data_valid;
-   logic [W_WEIGHT-1:0] weight_data;
-
-   logic [2:0]          rect_cnt_next, rect_cnt_reg;
 
    logic [W_ADDR_FEAT-1:0] feature_cnt_reg, feature_cnt_next;
 
@@ -79,20 +75,16 @@ module rects_mem
    assign addr_valid = rect0_addr_valid & rect1_addr_valid & rect2_addr_valid;
    assign addr_eot[0] = rect0_addr_eot[0] & rect1_addr_eot[0] & rect2_addr_eot[0];
 
+   logic                   stage_eot;
+   assign addr_eot[1] = stage_eot;
 
    always_comb
      begin
-        addr_eot[1] = 0;
+        stage_eot = 0;
         if(feature_cnt_next== 9||feature_cnt_next== 25||feature_cnt_next== 52||feature_cnt_next== 84||feature_cnt_next== 136||feature_cnt_next== 189||feature_cnt_next== 251||feature_cnt_next== 323||feature_cnt_next== 406||feature_cnt_next== 497||feature_cnt_next== 596||feature_cnt_next== 711||feature_cnt_next== 838||feature_cnt_next== 973||feature_cnt_next== 1109||feature_cnt_next== 1246||feature_cnt_next== 1405||feature_cnt_next== 1560||feature_cnt_next== 1729||feature_cnt_next== 1925||feature_cnt_next== 2122||feature_cnt_next== 2303||feature_cnt_next== 2502||feature_cnt_next== 2713||feature_cnt_next== 2913) begin
-           addr_eot[1] = 1;
+           stage_eot = 1;
         end
      end
-
-   always_ff @(posedge clk)
-     if(rst)
-       rect_cnt_reg <= 0;
-     else
-       rect_cnt_reg <= rect_cnt_next;
 
    always_ff @(posedge clk)
      begin

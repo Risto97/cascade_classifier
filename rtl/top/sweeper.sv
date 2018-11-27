@@ -20,8 +20,7 @@ module sweeper
     );
 
    logic             handshake;
-   logic             addr_valid_reg, addr_valid_next;
-   logic             cfg_ready_reg, cfg_ready_next;
+   logic             addr_valid_reg;
 
    logic [$clog2(SWEEP_X)-1:0] x_cnt_reg, x_cnt_next;
    logic [$clog2(SWEEP_Y)-1:0] y_cnt_reg, y_cnt_next;
@@ -97,16 +96,11 @@ module sweeper
      begin
         x_cnt_next = x_cnt_reg+1;
         y_cnt_next = y_cnt_reg;
-        cfg_ready_next = 1'b0;
 
         if(x_cnt_reg == SWEEP_X-1)
           begin
              x_cnt_next = 0;
              y_cnt_next = y_cnt_reg+1;
-          end
-        if(y_cnt_reg == SWEEP_Y-1 && x_cnt_reg == SWEEP_X-2)
-          begin
-             cfg_ready_next = 1'b1;
           end
         if(y_cnt_next == SWEEP_Y)
           begin
@@ -127,7 +121,6 @@ module sweeper
           begin
              x_cnt_reg <= 0;
              y_cnt_reg <= 0;
-             cfg_ready_reg <= 0;
              hop_y_reg <= 0;
              hop_x_reg <= 0;
              scale_cnt_reg <= 0;
@@ -137,7 +130,6 @@ module sweeper
              scale_cnt_reg <= scale_cnt_next;
              hop_y_reg <= hop_y_next;
              hop_x_reg <= hop_x_next;
-             cfg_ready_reg <= cfg_ready_next;
              x_cnt_reg <= x_cnt_next;
              y_cnt_reg <= y_cnt_next;
           end

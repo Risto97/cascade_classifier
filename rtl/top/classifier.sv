@@ -49,6 +49,8 @@ module classifier
 
    logic                 weights_valid, weights_ready;
    logic signed [W_WEIGHT-1:0] weight [2:0];
+   logic [2:0]                 weight_ready;
+   assign weights_ready = &weight_ready;
 
    logic                       internal_rst, local_rst;
 
@@ -67,7 +69,7 @@ module classifier
    assign din_data[2] = din2_data;
 
    logic [2:0]           rect_sum_din_ready;
-   logic [2:0]           rect_sum_valid, rect_sum_ready, rect_sum_eot;
+   logic [2:0]           rect_sum_valid, rect_sum_eot;
    logic signed [W_RECT_SUM-1:0] rect_sum [2:0];
    logic signed [W_RECT_SUM+1:0] all_rect_sum_reg, all_rect_sum_next;
    logic                         all_rect_sum_valid_reg, all_rect_sum_valid_next;
@@ -133,7 +135,7 @@ module classifier
                .din_eot(leaf_eot),
                .result_valid(result_valid),
                .result_ready(result_ready),
-               .result(result)
+               .result(result_data)
                );
 
    assign internal_rst = result_valid ? 1 : 0;
@@ -154,7 +156,7 @@ module classifier
                      .din_ready(rect_sum_din_ready[i]),
                      .din_data(din_data[i]),
                      .weight_valid(weights_valid),
-                     .weight_ready(weights_ready),
+                     .weight_ready(weight_ready[i]),
                      .weight(weight[i]),
                      .dout_valid(rect_sum_valid[i]),
                      .dout_ready(all_rect_sum_ready),

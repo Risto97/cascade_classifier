@@ -29,7 +29,6 @@ module leafVal
    logic                       leaf1_data_valid, leaf1_data_ready;
 
    logic                       addr_ready_o, data_valid_o;
-   logic [W_LEAF-1:0]          data_o;
 
    assign addr_ready = addr_ready_o;
    assign data_valid = data_valid_o;

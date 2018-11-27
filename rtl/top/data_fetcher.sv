@@ -34,19 +34,9 @@ module data_fetcher
    logic [W_Y-1:0]      y;
    logic                x_ready, y_ready;
 
-   logic                sweeper_cfg_valid, sweeper_cfg_ready;
-   logic [W_X-1:0]      sweeper_x_start;
-   logic [W_Y-1:0]      sweeper_y_start;
    logic                sweeper_addr_valid, sweeper_addr_ready;
-   logic                hop_eot;
-
-   logic               hopper_next_valid;
-   logic               hopper_next_ready;
-   logic [W_X-1:0]     hopper_next_x;
-   logic [W_Y-1:0]     hopper_next_y;
 
    assign sweeper_addr_ready = x_ready & y_ready;
-
 
    addr_trans #(.IMG_WIDTH(IMG_WIDTH), .IMG_HEIGHT(IMG_HEIGHT))
    addr_trans_i(

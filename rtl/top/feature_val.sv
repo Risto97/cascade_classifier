@@ -31,7 +31,7 @@ module feature_val
    logic signed [W_FEATURE_THRESHOLD-1:0] featureThreshold;
    logic                                  featureThreshold_addr_valid, featureThreshold_addr_ready;
 
-   logic                                  leaf_addr_valid, leaf_addr_ready, leaf_num;
+   logic                                  leaf_addr_valid, leaf_addr_ready, leafNum;
    logic                                  leaf_valid, leaf_ready;
    logic [W_LEAF-1:0]                     leaf_data;
 

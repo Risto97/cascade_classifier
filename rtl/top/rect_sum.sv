@@ -22,7 +22,7 @@ module rect_sum
     output                      dout_eot
     );
 
-   logic [1:0]                 dot_cnt_reg, dot_cnt_next;
+   logic [1:0]                 dot_cnt_reg;
    logic signed [W_DOUT-1:0]   data_accum_reg, data_accum_next;
    logic                       dout_eot_reg, dout_eot_next;
 
