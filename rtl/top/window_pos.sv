@@ -11,6 +11,7 @@ module window_pos
 
     input            window_pos_valid,
     output           window_pos_ready,
+    input            window_pos_eot,
     input [W_X-1:0]  window_pos_x,
     input [W_Y-1:0]  window_pos_y,
 
@@ -20,29 +21,34 @@ module window_pos
 
     output           detect_pos_valid,
     input            detect_pos_ready,
+    output           detect_pos_eot,
     output [W_Y-1:0] detect_pos_y,
     output [W_X-1:0] detect_pos_x
     );
 
    logic [W_X-1:0]  pos_x_reg;
    logic [W_Y-1:0]  pos_y_reg;
+   logic            eot_reg;
 
    assign window_pos_ready = result_valid & detect_pos_ready;
    assign result_ready = window_pos_valid;
 
    assign detect_pos_y = pos_y_reg;
    assign detect_pos_x = pos_x_reg;
+   assign detect_pos_eot = eot_reg & result_valid;
 
-   assign detect_pos_valid = (result_valid && result);
+   assign detect_pos_valid = (result_valid && result) | (window_pos_eot && result_valid);
 
    always_ff @(posedge clk)
      begin
         if(rst) begin
            pos_x_reg <= 0;
            pos_y_reg <= 0;
+           eot_reg <= 0;
         end else if(result_valid) begin
            pos_x_reg <= window_pos_x;
            pos_y_reg <= window_pos_y;
+           eot_reg <= window_pos_eot;
         end
      end
 

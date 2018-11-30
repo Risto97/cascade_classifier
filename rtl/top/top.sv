@@ -26,7 +26,8 @@ module top
 
     output             detect_pos_valid,
     input              detect_pos_ready,
-    output [$clog2(IMG_WIDTH)+$clog2(IMG_HEIGHT)-1:0]   detect_pos
+    output             detect_pos_eot,
+    output [31:0]      detect_pos
    );
 
    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT);
@@ -69,12 +70,21 @@ module top
    logic [W_STDDEV-1:0]  stddev_data;
 
    logic                 window_pos_valid, window_pos_ready;
+   logic                 window_pos_eot;
    logic [W_X-1:0]       window_pos_x;
    logic [W_Y-1:0]       window_pos_y;
    logic [W_Y-1:0]       detect_pos_y;
    logic [W_X-1:0]       detect_pos_x;
 
-   assign detect_pos = {detect_pos_y, detect_pos_x};
+   logic                 result_valid, result_ready, result;
+
+   logic                 local_rst, internal_rst;
+   logic [$size(detect_pos)-$size(detect_pos_y)-$size(detect_pos_x)-1:0] eot_filler;
+   assign eot_filler = (detect_pos_eot) ? '1 : 0;
+
+   assign local_rst = rst | internal_rst;
+   assign internal_rst = (result_valid && detect_pos_eot) ? 1 : 0;
+   assign detect_pos = {eot_filler, detect_pos_y, detect_pos_x};
 
    image_buffer #(
                   .W_DATA(W_DATA),
@@ -83,7 +93,7 @@ module top
                   )
    img_ram(
        .clk(clk),
-       .rst(rst),
+       .rst(local_rst),
        .din_valid(img_valid),
        .din_ready(img_ready),
        .din_data(img_data),
@@ -105,7 +115,7 @@ module top
                   .SCALE_NUM(SCALE_NUM))
    data_fetcher_i(
                   .clk(clk),
-                  .rst(rst),
+                  .rst(local_rst),
                   .addr_valid(addr1_valid),
                   .addr_ready(addr1_ready),
                   .addr(addr1_data),
@@ -118,6 +128,7 @@ module top
                   .dout_eot(df_dout_eot),
                   .window_pos_valid(window_pos_valid),
                   .window_pos_ready(window_pos_ready),
+                  .window_pos_eot(window_pos_eot),
                   .window_pos_y(window_pos_y),
                   .window_pos_x(window_pos_x)
                   );
@@ -126,7 +137,7 @@ module top
                 .FEATURE_WIDTH(FEATURE_WIDTH))
    ii_sii_gen_i(
                 .clk(clk),
-                .rst(rst),
+                .rst(local_rst),
                 .din_valid(df_dout_valid),
                 .din_ready(df_dout_ready),
                 .din_data(df_dout_data),
@@ -144,7 +155,7 @@ module top
    broadcast #(.W_DATA(W_II))
    bc1 (
         .clk(clk),
-        .rst(rst),
+        .rst(local_rst),
         .din_valid(ii_valid),
         .din_ready(ii_ready),
         .din_data(ii_data),
@@ -167,7 +178,7 @@ module top
             .SQRT_DEPTH(256))
    stddev1(
            .clk(clk),
-           .rst(rst),
+           .rst(local_rst),
            .ii_valid(ii_stddev_valid),
            .ii_ready(ii_stddev_ready),
            .ii_data(ii_stddev_data),
@@ -186,7 +197,7 @@ module top
                    .WINDOW_HEIGHT(FEATURE_HEIGHT))
    window_buffer_i(
                    .clk(clk),
-                   .rst(rst),
+                   .rst(local_rst),
                    .din_valid(ii_buffer_valid),
                    .din_ready(ii_buffer_ready),
                    .din_data(ii_buffer_data),
@@ -207,7 +218,7 @@ module top
                 .W_ADDR(W_ADDR_II))
    classifier_i(
                 .clk(clk),
-                .rst(rst),
+                .rst(local_rst),
                 .din_valid(ii_dout_valid),
                 .din_ready(ii_dout_ready),
                 .din0_data(ii_dout0_data),
@@ -220,7 +231,7 @@ module top
                 .addr2_data(ii_addr2_data),
                 .result_valid(result_valid),
                 .result_ready(result_ready),
-                .result_data(result_data),
+                .result_data(result),
                 .stddev_valid(stddev_valid),
                 .stddev_ready(stddev_ready),
                 .stddev_data(stddev_data)
@@ -233,16 +244,18 @@ module top
        )
    window_pos_i (
                  .clk(clk),
-                 .rst(rst),
+                 .rst(local_rst),
                  .window_pos_valid(window_pos_valid),
                  .window_pos_ready(window_pos_ready),
+                 .window_pos_eot(window_pos_eot),
                  .window_pos_x(window_pos_x),
                  .window_pos_y(window_pos_y),
                  .result_valid(result_valid),
                  .result_ready(result_ready),
-                 .result(result_data),
+                 .result(result),
                  .detect_pos_valid(detect_pos_valid),
                  .detect_pos_ready(detect_pos_ready),
+                 .detect_pos_eot(detect_pos_eot),
                  .detect_pos_y(detect_pos_y),
                  .detect_pos_x(detect_pos_x)
                  );

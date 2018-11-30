@@ -15,6 +15,7 @@ module sweeper
 
     output           window_pos_valid,
     input            window_pos_ready,
+    output           window_pos_eot,
     output [W_Y-1:0] window_pos_y,
     output [W_X-1:0] window_pos_x,
 
@@ -26,6 +27,7 @@ module sweeper
 
    logic             handshake;
    logic             addr_valid_reg;
+   logic             window_eot_reg, window_eot_next;
 
    logic [$clog2(SWEEP_X)-1:0] x_cnt_reg, x_cnt_next;
    logic [$clog2(SWEEP_Y)-1:0] y_cnt_reg, y_cnt_next;
@@ -40,6 +42,8 @@ module sweeper
    assign window_pos_x = hop_x_reg;
    assign window_pos_y = hop_y_reg;
    assign window_pos_valid = window_pos_valid_reg;
+   assign window_pos_eot = window_eot_reg;
+
    always_ff @(posedge clk)
      begin
         if(rst)
@@ -53,63 +57,73 @@ module sweeper
      end
 
 
-   generate
-      genvar                   i;
-      for(i = 0; i<SCALE_NUM; i++) begin
-         assign ratio_x[i] = (IMG_WIDTH << 16) / (IMG_WIDTH / (1/0.75)**i) + 1;
-         assign ratio_y[i] = (IMG_HEIGHT << 16) / (IMG_HEIGHT / (1/0.75)**i) + 1;
-      end
-   endgenerate
+   // generate
+   //    genvar                   i;
+   //    for(i = 0; i<SCALE_NUM; i++) begin
+   //       assign ratio_x[i] = (IMG_WIDTH << 16) / (IMG_WIDTH / (1/0.75)**i) + 1;
+   //       assign ratio_y[i] = (IMG_HEIGHT << 16) / (IMG_HEIGHT / (1/0.75)**i) + 1;
+   //    end
+   // endgenerate
+   assign ratio_x[0] = 65537;
+   assign ratio_x[1] = 87382;
 
+   assign ratio_y[0] = 65537;
+   assign ratio_y[1] = 87382;
 
    logic [$clog2(IMG_WIDTH)-1:0] boundary_x[SCALE_NUM-1:0];
    logic [$clog2(IMG_HEIGHT)-1:0] boundary_y[SCALE_NUM-1:0];
-   generate
-      genvar                     j;
-      for(j=0; j<SCALE_NUM; j++) begin
-         assign boundary_x[j] = $floor((IMG_WIDTH / (1/0.75)**j) - SWEEP_X);
-         assign boundary_y[j] = $floor((IMG_HEIGHT / (1/0.75)**j) - SWEEP_Y);
-      end
-   endgenerate
+   assign boundary_x[0] = 20;
+   assign boundary_x[1] = 8;
+   assign boundary_y[0] = 20;
+   assign boundary_y[1] = 8;
+
+   // generate
+   //    genvar                     j;
+   //    for(j=0; j<SCALE_NUM; j++) begin
+   //       assign boundary_x[j] = $floor((IMG_WIDTH / (1/0.75)**j) - SWEEP_X);
+   //       assign boundary_y[j] = $floor((IMG_HEIGHT / (1/0.75)**j) - SWEEP_Y);
+   //    end
+   // endgenerate
 
    logic [$clog2(SCALE_NUM)-1:0] scale_cnt_reg, scale_cnt_next;
 
    assign handshake = addr_ready & addr_valid;
    assign addr_valid = addr_valid_reg;
 
-   assign x = ((x_cnt_reg + hop_x_reg )* ratio_x[scale_cnt_reg]) >> 16;
-   assign y = ((y_cnt_reg + hop_y_reg )* ratio_y[scale_cnt_reg]) >> 16;
+   assign x = ((x_cnt_reg + hop_x_reg ) * ratio_x[scale_cnt_reg]) >> 16;
+   assign y = ((y_cnt_reg + hop_y_reg ) * ratio_y[scale_cnt_reg]) >> 16;
 
    always_comb
      begin
         hop_x_next = hop_x_reg;
-        hop_y_next = hop_y_reg;
-        scale_cnt_next = scale_cnt_reg;
-
         if(x_cnt_reg == SWEEP_X-1 && y_cnt_reg == SWEEP_Y-1)
           begin
              hop_x_next = hop_x_reg + 1;
+             if(hop_x_reg == boundary_x[scale_cnt_reg])
+               hop_x_next = 0;
           end
-        if(y_cnt_next == SWEEP_Y)
+     end
+
+   always_comb
+     begin
+        hop_y_next = hop_y_reg;
+        if(x_cnt_reg == SWEEP_X-1 && y_cnt_reg == SWEEP_Y-1 && hop_x_reg == boundary_x[scale_cnt_reg])
           begin
              hop_y_next = hop_y_reg + 1;
+             if(hop_y_reg == boundary_y[scale_cnt_reg])
+               hop_y_next = 0;
           end
+     end
 
-        if(hop_x_next == boundary_x[scale_cnt_reg]+1)
-          begin
-             hop_x_next = 0;
-             if(x_cnt_reg == SWEEP_X-1 && y_cnt_reg == SWEEP_Y-1)
-               begin
-                  hop_y_next = hop_y_reg + 1;
-               end
-             if(hop_y_reg == boundary_y[scale_cnt_reg] && hop_x_reg == boundary_x[scale_cnt_reg])
-               begin
-                  hop_y_next = 0;
-                  scale_cnt_next = scale_cnt_reg + 1;
-               end
-          end
-        if(scale_cnt_next == SCALE_NUM)
-          scale_cnt_next = 0;
+   always_comb
+     begin
+        scale_cnt_next = scale_cnt_reg;
+        window_eot_next = window_eot_reg;
+        if(hop_x_reg == boundary_x[scale_cnt_reg] && hop_y_reg == boundary_y[scale_cnt_reg] && x_cnt_reg == SWEEP_X-1 && y_cnt_reg == SWEEP_Y-1) begin
+           scale_cnt_next = scale_cnt_reg + 1;
+           if(scale_cnt_reg == SCALE_NUM-1)
+             window_eot_next = 1;
+        end
      end
 
    always_comb
@@ -127,6 +141,14 @@ module sweeper
              x_cnt_next = 0;
              y_cnt_next = 0;
           end
+     end
+
+   always_ff @(posedge clk)
+     begin
+        if(rst)
+          window_eot_reg <= 0;
+        else
+          window_eot_reg <= window_eot_next;
      end
 
    always_ff @(posedge clk)

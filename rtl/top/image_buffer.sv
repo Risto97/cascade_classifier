@@ -43,7 +43,7 @@ module image_buffer
 
    assign din_ready = !full;
 
-   assign full_next = (din_eot | full)  ? 1 : 0;
+   assign full_next = ((din_eot & din_valid) | full)  ? 1 : 0;
 
    always_ff @(posedge clk)
      begin

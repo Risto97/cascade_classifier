@@ -30,7 +30,7 @@ int main(int argc, char **argv, char **env){
 
   top->img_eot = 0;
 
-  for(i=0; i<900000; i++){
+  for(i=0; i<2000000; i++){
     top->rst = (i<2);
 
     for (clk=0; clk<2; clk++){
@@ -39,6 +39,7 @@ int main(int argc, char **argv, char **env){
 
         if(img_done == 1){
           top->img_eot = 0;
+          top->img_valid = 0;
         }
         if(img_done == 0){
           top->img_valid = 1;
