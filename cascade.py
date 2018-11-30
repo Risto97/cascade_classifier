@@ -212,19 +212,13 @@ class CascadeClass(object):
             weight_l = []
             max_feature_size = max(self.featureSize)
             w_rect = math.ceil(math.log(max_feature_size, 2))
-            w_data_l = [4*w_rect, 3]
+            w_data_l = [4 * w_rect, 3]
 
             for s, stage in enumerate(self.stages):
                 for feature in stage.features:
                     try:
-                        A = [
-                            feature.rects[r].A['x'],
-                            feature.rects[r].A['y']
-                        ]
-                        D = [
-                            feature.rects[r].D['x'],
-                            feature.rects[r].D['y']
-                        ]
+                        A = [feature.rects[r].A['x'], feature.rects[r].A['y']]
+                        D = [feature.rects[r].D['x'], feature.rects[r].D['y']]
                         weight = feature.rects[r].weight // 4096
                         if (A[0] > D[0] | A[1] > D[1]):
                             print(
@@ -238,7 +232,8 @@ class CascadeClass(object):
                     width = D[0] - A[0]
                     height = D[1] - A[1]
 
-                    rect_ccat = (A[0] + A[1] * (self.featureSize[1] + 1)) << (w_rect*2)
+                    rect_ccat = (A[0] + A[1] *
+                                 (self.featureSize[1] + 1)) << (w_rect * 2)
                     rect_ccat |= width << w_rect
                     rect_ccat |= height
                     # rect_l.extend((A[0], A[1], width, height))
@@ -251,7 +246,6 @@ class CascadeClass(object):
                     math.ceil(math.log(len(weight_l), 2))
                 ]
 
-
                 dumpVerilogROM(
                     data_l,
                     w_addr_l,
@@ -260,6 +254,60 @@ class CascadeClass(object):
                     directory,
                     dual_port=dual_port,
                     block_ram=block_ram)
+
+    def dumpParamsVerilog(self, fn, img, scaleNum, x_ratio, y_ratio,
+                          boundary_x, boundary_y):
+        f = open(fn, "w")
+        parallel_rows = 1
+        ratio_max = max(max(x_ratio), max(y_ratio))
+        w_ratio = math.ceil(math.log(ratio_max, 2))
+        w_ratio = 24  #### ????????????????
+        w_boundary = math.ceil(
+            math.log(max(img.img.shape[0], img.img.shape[1]), 2))
+
+        print(f"`ifndef PARAMS_SV", file=f)
+        print(f"`define PARAMS_SV", file=f)
+        print(f"package params;\n", file=f)
+        print(f"parameter W_DATA = 8;", file=f)
+        print(f"parameter IMG_WIDTH = {img.img.shape[1]};", file=f)
+        print(f"parameter IMG_HEIGHT = {img.img.shape[0]};", file=f)
+        print(f"parameter PARALLEL_ROWS = {parallel_rows};", file=f)
+        print(f"parameter SCALE_NUM = {scaleNum};\n", file=f)
+
+        print(f"parameter W_RATIO = {w_ratio};", file=f)
+        print(f"parameter W_BOUNDARY = {w_boundary};\n", file=f)
+
+        print(f"parameter [SCALE_NUM*W_RATIO-1:0] X_RATIO =", end='{', file=f)
+        for enum, val in enumerate(reversed(x_ratio)):
+            if(enum < len(x_ratio)-1):
+                print(f"{w_ratio}'d{val}",end=',', file=f)
+            else:
+                print(f"{w_ratio}'d{val}",end='};\n', file=f)
+
+        print(f"parameter [SCALE_NUM*W_RATIO-1:0] Y_RATIO =", end='{', file=f)
+        for enum, val in enumerate(reversed(y_ratio)):
+            if(enum < len(y_ratio)-1):
+                print(f"{w_ratio}'d{val}",end=',', file=f)
+            else:
+                print(f"{w_ratio}'d{val}",end='};\n', file=f)
+
+        print(f"\nparameter [SCALE_NUM*W_BOUNDARY-1:0] X_BOUNDARY =", end='{', file=f)
+        for enum, val in enumerate(reversed(boundary_x)):
+            if(enum < len(boundary_x)-1):
+                print(f"{w_boundary}'d{val}",end=',', file=f)
+            else:
+                print(f"{w_boundary}'d{val}",end='};', file=f)
+
+        print(f"\nparameter [SCALE_NUM*W_BOUNDARY-1:0] Y_BOUNDARY =", end='{', file=f)
+        for enum, val in enumerate(reversed(boundary_y)):
+            if(enum < len(boundary_y)-1):
+                print(f"{w_boundary}'d{val}",end=',', file=f)
+            else:
+                print(f"{w_boundary}'d{val}",end='};\n', file=f)
+
+        print(f"\nendpackage: params", file=f)
+        print(f"`endif", file=f)
+        pass
 
     @property
     def featuresNum(self):
@@ -414,10 +462,10 @@ if __name__ == "__main__":
     #         print("----------------")
     #         cnt += 1
 
+    # cascade.dumpParamsVerilog("rtl/top/params.sv")
 
-
-    cascade.dumpFeatureVerilogROM("rtl/top/rom/")
-    cascade.dumpRectVerilogROM("rtl/top/rom/")
-    cascade.dumpStageVerilogROM("rtl/top/rom/")
+    # cascade.dumpFeatureVerilogROM("rtl/top/rom/")
+    # cascade.dumpRectVerilogROM("rtl/top/rom/")
+    # cascade.dumpStageVerilogROM("rtl/top/rom/")
 
     # cascade.dumpCpp(fn)

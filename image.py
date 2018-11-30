@@ -50,23 +50,23 @@ class ImageClass(object):
 
     def dumpArrayC(self, fn):
         f = open(fn, "w")
-        WIDTH = img.img_size[1]
-        HEIGHT = img.img_size[0]
+        WIDTH = self.img_size[1]
+        HEIGHT = self.img_size[0]
         print(f"#ifndef IMG_HPP", file=f)
         print(f"#define IMG_HPP\n", file=f)
         # print(f"#include <stdint.h>\n", file=f)
         print(f"const int WIDTH = {WIDTH};", file=f)
         print(f"const int HEIGHT = {HEIGHT};\n", file=f)
-        print(f"unsigned char img[{HEIGHT}][{WIDTH}]=", end='', file=f)
+        print(f"unsigned int img[{HEIGHT}][{WIDTH}]=", end='', file=f)
         print("{", file=f)
 
         for y in range(HEIGHT):
             print("{", end='', file=f)
             for x in range(WIDTH):
                 if x < WIDTH - 1:
-                    print(f"{img.img[y][x]}", end=',', file=f)
+                    print(f"{self.img[y][x]}", end=',', file=f)
                 else:
-                    print(f"{img.img[y][x]}", end='', file=f)
+                    print(f"{self.img[y][x]}", end='', file=f)
 
             if y < HEIGHT - 1:
                 print("},", end="\n", file=f)

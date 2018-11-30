@@ -1,19 +1,16 @@
+`include "params.sv"
+
 module top
   #(
     parameter W_DATA = 8,
-    parameter IMG_WIDTH = 45,
-    parameter IMG_HEIGHT = 45,
     parameter FEATURE_WIDTH = 25,
     parameter FEATURE_HEIGHT = 25,
     parameter PARALLEL_ROWS = 1,
-    parameter SCALE_NUM = 2,
     localparam DATA_MAX = 2**W_DATA-1,
     localparam W_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX),
     localparam W_SII = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX*DATA_MAX),
     localparam W_STDDEV = $clog2(2**W_SII) + $clog2((FEATURE_HEIGHT-1)*(FEATURE_WIDTH-1)),
-    localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT),
-    localparam W_X = $clog2(IMG_WIDTH),
-    localparam W_Y = $clog2(IMG_HEIGHT)
+    localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT)
     )
    (
     input              clk,
@@ -30,7 +27,11 @@ module top
     output [31:0]      detect_pos
    );
 
+   import params::*;
+
    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT);
+   localparam W_X = $clog2(IMG_WIDTH);
+   localparam W_Y = $clog2(IMG_HEIGHT);
 
    logic                addr1_valid, addr1_ready, data1_valid, data1_ready;
    logic [W_ADDR-1:0]   addr1_data;

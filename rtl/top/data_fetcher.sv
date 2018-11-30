@@ -59,12 +59,9 @@ module data_fetcher
                 .addr_data(addr)
                 );
 
-   sweeper #(.IMG_HEIGHT(IMG_HEIGHT),
-             .IMG_WIDTH(IMG_WIDTH),
-             .SWEEP_X(FEATURE_WIDTH),
-             .SWEEP_Y(FEATURE_HEIGHT),
-             .STRIDE_Y(PARALLEL_ROWS),
-             .SCALE_NUM(SCALE_NUM))
+   sweeper #(
+             .FEATURE_WIDTH(FEATURE_WIDTH),
+             .FEATURE_HEIGHT(FEATURE_HEIGHT))
    sweeper_i(
              .clk(clk),
              .rst(rst),
