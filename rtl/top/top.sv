@@ -21,6 +21,7 @@ module top
     input [W_DATA-1:0] img_data,
     input              img_eot,
 
+    output             detect_interrupt,
     output             detect_pos_valid,
     input              detect_pos_ready,
     output             detect_pos_eot,
@@ -82,6 +83,7 @@ module top
    logic                 local_rst, internal_rst;
    logic [$size(detect_pos)-$size(detect_pos_y)-$size(detect_pos_x)-1:0] eot_filler;
    assign eot_filler = (detect_pos_eot) ? '1 : 0;
+   assign detect_interrupt = detect_pos_eot;
 
    assign local_rst = rst | internal_rst;
    assign internal_rst = (result_valid && detect_pos_eot) ? 1 : 0;
