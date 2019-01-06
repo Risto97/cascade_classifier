@@ -81,13 +81,26 @@ module top
    logic                 result_valid, result_ready, result;
 
    logic                 local_rst, internal_rst;
-   logic [$size(detect_pos)-$size(detect_pos_y)-$size(detect_pos_x)-1:0] eot_filler;
+   logic [7:0]           detect_pos_scale, window_pos_scale;
+   logic [$size(detect_pos)-$size(detect_pos_y)-$size(detect_pos_x)-$size(detect_pos_scale)-1:0] eot_filler;
    assign eot_filler = (detect_pos_eot) ? '1 : 0;
-   assign detect_interrupt = detect_pos_eot;
+
+   logic                                                                 detect_interrupt_reg, detect_interrupt_next;
+
+   always_ff @(posedge clk) begin
+      if(rst | img_valid) begin
+         detect_interrupt_reg <= 0;
+      end else begin
+         detect_interrupt_reg <= detect_interrupt_next;
+      end
+   end
+   assign detect_interrupt_next = (detect_pos_eot) ? 1 : detect_interrupt_reg;
+
+   assign detect_interrupt = detect_interrupt_reg & img_ready;
 
    assign local_rst = rst | internal_rst;
    assign internal_rst = (result_valid && detect_pos_eot) ? 1 : 0;
-   assign detect_pos = {eot_filler, detect_pos_y, detect_pos_x};
+   assign detect_pos = {eot_filler, detect_pos_scale, detect_pos_y, detect_pos_x};
 
    image_buffer #(
                   .W_DATA(W_DATA),
@@ -132,6 +145,7 @@ module top
                   .window_pos_valid(window_pos_valid),
                   .window_pos_ready(window_pos_ready),
                   .window_pos_eot(window_pos_eot),
+                  .window_pos_scale(window_pos_scale),
                   .window_pos_y(window_pos_y),
                   .window_pos_x(window_pos_x)
                   );
@@ -251,6 +265,7 @@ module top
                  .window_pos_valid(window_pos_valid),
                  .window_pos_ready(window_pos_ready),
                  .window_pos_eot(window_pos_eot),
+                 .window_pos_scale(window_pos_scale),
                  .window_pos_x(window_pos_x),
                  .window_pos_y(window_pos_y),
                  .result_valid(result_valid),
@@ -259,6 +274,7 @@ module top
                  .detect_pos_valid(detect_pos_valid),
                  .detect_pos_ready(detect_pos_ready),
                  .detect_pos_eot(detect_pos_eot),
+                 .detect_pos_scale(detect_pos_scale),
                  .detect_pos_y(detect_pos_y),
                  .detect_pos_x(detect_pos_x)
                  );

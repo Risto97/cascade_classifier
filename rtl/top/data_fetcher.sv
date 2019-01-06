@@ -31,6 +31,7 @@ module data_fetcher
     output              window_pos_valid,
     input               window_pos_ready,
     output              window_pos_eot,
+    output [7:0]         window_pos_scale,
     output [W_X-1:0]    window_pos_x,
     output [W_Y-1:0]    window_pos_y
     );
@@ -68,6 +69,7 @@ module data_fetcher
              .window_pos_valid(window_pos_valid),
              .window_pos_ready(window_pos_ready),
              .window_pos_eot(window_pos_eot),
+             .window_pos_scale(window_pos_scale),
              .window_pos_y(window_pos_y),
              .window_pos_x(window_pos_x),
              .addr_valid(sweeper_addr_valid),

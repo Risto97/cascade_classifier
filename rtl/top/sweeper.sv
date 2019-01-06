@@ -12,6 +12,7 @@ module sweeper
     output           window_pos_valid,
     input            window_pos_ready,
     output           window_pos_eot,
+    output [7:0]     window_pos_scale,
     output [W_Y-1:0] window_pos_y,
     output [W_X-1:0] window_pos_x,
 
@@ -41,6 +42,7 @@ module sweeper
    logic                       window_pos_valid_reg;
    assign window_pos_x = hop_x_reg;
    assign window_pos_y = hop_y_reg;
+   assign window_pos_scale = scale_cnt_reg;
    assign window_pos_valid = window_pos_valid_reg;
    assign window_pos_eot = window_eot_reg;
 
