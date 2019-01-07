@@ -14,7 +14,7 @@ din_t = Queue[Uint[8], 2]
 
 
 @gear
-def accum_wrap(din: din_t):
+def accum_wrap(din: Queue[Uint['w_din'], 2]):
     accum_in = ccat(din[0], din[1][0]) | Queue[din.dtype[0], 1]
     accum_s = accum_in | accum
     eot_s = din[1][1] * din[1][0]
@@ -24,7 +24,7 @@ def accum_wrap(din: din_t):
 
 
 @gear
-def ii_gen(din: din_t, *, frame_size=(25, 25)):
+def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
     accum_s = din | accum_wrap
 
     fifo_out = Intf(accum_s.dtype[0])
@@ -35,9 +35,19 @@ def ii_gen(din: din_t, *, frame_size=(25, 25)):
 
     fifo_out |= fifo_in | fifo2(depth=32, preload=frame_size[1], regout=False)
 
-    dout_s = fifo_in
+    ii_s = fifo_in
 
-    return dout_s
+    return ii_s
+
+@gear
+def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25,25)):
+    mult_s = din[0] * din[0]
+    sii_in = ccat(mult_s, din[1]) | Queue[mult_s.dtype, 2]
+    sii_s = sii_in | ii_gen
+
+    return sii_s
+
+
 
 
 frame_size = (25, 25)
@@ -51,6 +61,9 @@ for i in range(2):
         seq_y.append(seq_x)
     seq.append(seq_y)
 
+sii_gen(
+    din=drv(t=din_t, seq=seq), frame_size=frame_size,
+    sim_cls=SimVerilated) | shred
 ii_gen(
     din=drv(t=din_t, seq=seq), frame_size=frame_size,
     sim_cls=SimVerilated) | shred
