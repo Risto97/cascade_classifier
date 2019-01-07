@@ -13,6 +13,18 @@ module fifo2
 	  dti.producer dout
 	  ) ;
 
+   typedef struct packed
+                  {
+                     logic eot;
+                     logic [$size(din.data)-2:0] data;
+                  } data_t;
+
+   data_t din_s;
+   data_t dout_s;
+
+   assign din_s = din.data;
+   assign dout.data = dout_s;
+
 	 localparam CW = $clog2(DEPTH);
 	 localparam WIDTH = DIN;
 
@@ -54,8 +66,8 @@ module fifo2
       assign fifo_valid = ~empty;
    end
 
-   assign in_buff = din.data;
-	 assign dout.data = out_buff[WIDTH-1:0];
+   assign in_buff = din_s.data;
+	 assign dout_s = out_buff[WIDTH-1:0];
    assign dout.valid = out_valid;
 
    assign out_handshake = fifo_valid && out_ready;
@@ -73,7 +85,10 @@ module fifo2
       assign out_ready = (!out_valid) | dout.ready;
 
       always_ff @(posedge clk) begin
-         if (out_ready) begin
+         if(rst | din_s.eot) begin
+            out_buff <= 0;
+         end
+         else if (out_ready) begin
             out_buff <= ram[raddr_reg[CW-1:0]];
          end
       end
@@ -88,7 +103,7 @@ module fifo2
 
 
 	 always @(posedge clk) begin
-      if(rst) begin
+      if(rst | din_s.eot) begin
          ram <= '{default:0};
       end
 	    else if (we == 1'b1) begin
@@ -99,7 +114,7 @@ module fifo2
 
 
 	 always_ff @(posedge clk)
-	   if (rst)
+	   if (rst | din_s.eot)
 		   begin
 			    raddr_reg <= '0;
 			    waddr_reg <= PRELOAD;
