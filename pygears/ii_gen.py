@@ -10,7 +10,6 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-din_t = Queue[Uint[8], 2]
 
 
 @gear
@@ -35,12 +34,13 @@ def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
 
     fifo_out |= fifo_in | fifo2(depth=32, preload=frame_size[1], regout=False)
 
-    ii_s = fifo_in
+    ii_s = fifo_in | Queue[add_s.dtype, 1]
 
     return ii_s
 
+
 @gear
-def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25,25)):
+def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
     mult_s = din[0] * din[0]
     sii_in = ccat(mult_s, din[1]) | Queue[mult_s.dtype, 2]
     sii_s = sii_in | ii_gen
@@ -48,26 +48,26 @@ def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25,25)):
     return sii_s
 
 
+if __name__ == "__main__":
+    din_t = Queue[Uint[8], 2]
+    frame_size = (25, 25)
+    seq = []
+    for i in range(2):
+        seq_y = []
+        for y in range(frame_size[0]):
+            seq_x = []
+            for x in range(frame_size[1]):
+                seq_x.append(x + 1)
+            seq_y.append(seq_x)
+        seq.append(seq_y)
 
+    sii_gen(
+        din=drv(t=din_t, seq=seq), frame_size=frame_size,
+        sim_cls=SimVerilated) | shred
+    ii_gen(
+        din=drv(t=din_t, seq=seq), frame_size=frame_size,
+        sim_cls=SimVerilated) | shred
 
-frame_size = (25, 25)
-seq = []
-for i in range(2):
-    seq_y = []
-    for y in range(frame_size[0]):
-        seq_x = []
-        for x in range(frame_size[1]):
-            seq_x.append(x + 1)
-        seq_y.append(seq_x)
-    seq.append(seq_y)
-
-sii_gen(
-    din=drv(t=din_t, seq=seq), frame_size=frame_size,
-    sim_cls=SimVerilated) | shred
-ii_gen(
-    din=drv(t=din_t, seq=seq), frame_size=frame_size,
-    sim_cls=SimVerilated) | shred
-
-sim(outdir='./build',
-    check_activity=True,
-    extens=[partial(PyGearsView, live=True, reload=True)])
+    sim(outdir='./build',
+        check_activity=True,
+        extens=[partial(PyGearsView, live=True, reload=True)])
