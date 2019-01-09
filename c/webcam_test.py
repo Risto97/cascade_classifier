@@ -12,11 +12,11 @@ lib = ctl.load_library(libname, libdir)
 
 detect = lib.detect
 detect.argtypes = [
-    ctl.ndpointer(np.uint8, flags='aligned, c_contiguous'),
+    ctl.ndpointer(np.uint8, flags='aligned, c_contiguous'), ctypes.c_int,
     ctypes.c_int,
-    ctypes.c_int,
-    ctl.ndpointer(np.uint16, flags='aligned, c_contiguous'),
-    ctypes.c_float
+    ctl.ndpointer(np.uint16, flags='aligned, c_contiguous'), ctypes.c_int,
+    ctl.ndpointer(np.float32,
+                    flags='aligned, c_contiguous'), ctypes.c_float
 ]
 
 cap = cv2.VideoCapture(0)
@@ -24,6 +24,7 @@ ret = cap.set(3,240)
 ret = cap.set(4,320)
 
 res = np.zeros(shape=(1000,4), dtype='u2')
+hit = np.zeros(shape=(25, 1), dtype='f4')
 res_num = 0
 frames_num = 0
 exec_time = 0
@@ -41,7 +42,7 @@ while(True):
     gray = gray.astype('u1')
 
     start_time = time.time()
-    res_num = detect(gray, gray.shape[0], gray.shape[1], res, 1.2)
+    res_num = detect(gray, gray.shape[0], gray.shape[1], res, 1, hit, 1.33)
     exec_time += time.time()*1000 - start_time*1000
 
     for i in range(res_num):
