@@ -3,6 +3,7 @@ from pygears.typing import Queue, Uint, Tuple
 
 from ii_gen import ii_gen
 from img_ram import img_ram
+from rd_addrgen import rd_addrgen, addr_trans
 
 from pygears.sim import sim
 from pygears.sim.modules import drv
@@ -27,12 +28,13 @@ addr_t = Queue[Uint[w_addr], 3]
 
 @gear
 def cascade_classifier(din: Queue[Uint['w_din'], 1],
-                       rd_addr: Queue[Uint['w_addr'], 3],
+                       # rd_addr: Queue[Uint['w_addr'], 3],
                        *,
                        img_size=(240, 320),
                        frame_size=(25, 25)):
 
-    dout = img_ram(din, rd_addr, img_size=img_size) \
+    rd_addr_s = rd_addrgen(img_size=img_size, frame_size=frame_size) | addr_trans(img_size=img_size) | Queue[Uint[12], 3]
+    dout = img_ram(din, rd_addr_s, img_size=img_size) \
         | ii_gen(frame_size=frame_size)
 
     return dout
@@ -53,7 +55,7 @@ if __name__ == "__main__":
 
     cascade_classifier(
         din=drv(t=din_t, seq=seq),
-        rd_addr=drv(t=addr_t, seq=rd_seq),
+        # rd_addr=drv(t=addr_t, seq=rd_seq),
         img_size=img_size,
         frame_size=frame_size,
         sim_cls=SimVerilated) | shred
