@@ -2,7 +2,7 @@ from pygears import gear, Intf
 from pygears.typing import Queue, Uint
 from gears.fifo2 import fifo2
 from gears.accum import accum
-from pygears.common import ccat, add, shred
+from pygears.common import ccat, add, shred, flatten
 
 from pygears.sim import sim
 from pygears.sim.modules import drv
@@ -11,13 +11,11 @@ from pygears_view import PyGearsView
 from functools import partial
 
 
-
 @gear
 def accum_wrap(din: Queue[Uint['w_din'], 2]):
     accum_in = ccat(din[0], din[1][0]) | Queue[din.dtype[0], 1]
     accum_s = accum_in | accum
-    eot_s = din[1][1] * din[1][0]
-    dout_s = ccat(accum_s, eot_s) | Queue[accum_s.dtype, 1]
+    dout_s = ccat(accum_s, din[1]) | Queue[accum_s.dtype, 2] | flatten
 
     return dout_s
 
