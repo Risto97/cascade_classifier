@@ -114,8 +114,14 @@ class ImageClass(object):
 
         pass
 
+def loadImage(fn):
+    img = ImageClass()
+    img.loadImage(fn)
+
+    return img.img
+
 if __name__ == "__main__":
-    img_fn = 'datasets/rtl2.jpg'
+    img_fn = "datasets/rtl.pgm"
     img = ImageClass()
     img.loadImage(img_fn)
 
@@ -125,7 +131,9 @@ if __name__ == "__main__":
     #         img.img[y][x] = x+1
 
 
-    img.dumpArrayC("rtl/top/img.hpp")
+
+    print(img.img)
+    # img.dumpArrayC("rtl/top/img.hpp")
     # img.dumpVerilogROM("rtl/top/rom/bram_rom.sv")
 
     # import time
