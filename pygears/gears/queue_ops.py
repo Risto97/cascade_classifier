@@ -32,7 +32,7 @@ async def queue_edges(din: Queue[Uint['w_data'], 2], *, w_data=b'w_data') -> b'Q
 
 
 @gear(svgen={'compile': True})
-async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *, w_data=b'w_data') -> b'Queue[Uint[w_data], 1]':
+async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *, w_data=b'w_data') -> b'Queue[Uint[w_data], 2]':
     first_q_done = 0
     first_q_active = 1
     async for (data, eot) in din:
@@ -40,11 +40,11 @@ async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *, w_data=b'w_data') -
             first_q_active = 0
         elif eot==2:
             first_q_active = 1
-            yield (data, 0)
+            yield (data, eot)
 
         if first_q_active==1:
             first_q_done = 1
-            yield (data, eot[1] and eot[0])
+            yield (data, eot)
 
 
 @gear
