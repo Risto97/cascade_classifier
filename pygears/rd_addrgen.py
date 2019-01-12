@@ -74,5 +74,3 @@ if __name__ == "__main__":
     sim(outdir='build',
         check_activity=True,
         extens=[partial(PyGearsView, live=True, reload=True)])
-
-#     pass
