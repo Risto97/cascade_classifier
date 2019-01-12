@@ -15,19 +15,19 @@ module bram_rd_port
     input               data1_ready,
     output [W_DATA-1:0] data1,
 
-    output              en1,
-    output [W_ADDR-1:0] addr1,
-    input [W_DATA-1:0]  data1_i
+    output              ena,
+    output [W_ADDR-1:0] addra,
+    input [W_DATA-1:0]  doa
     );
 
    logic                data1_valid_reg;
 
-   assign en1 = addr1_valid & data1_ready;
-   assign addr1 = addr1_data;
+   assign ena = addr1_valid & data1_ready;
+   assign addra = addr1_data;
    assign addr1_ready = data1_ready;
    assign data1_valid = data1_valid_reg;
 
-   assign data1 = data1_i;
+   assign data1 = doa;
 
    always_ff @(posedge clk)begin
       if(rst)

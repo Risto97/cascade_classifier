@@ -60,30 +60,43 @@ class SqrtClass(object):
 
         hex_w = self.w_data//4
 
-        print(f"module sqrt_rom", file=f)
+        print(f"module rom_mem", file=f)
         print(f"  #(", file=f)
-        print(f"     parameter W_DATA = {self.w_data},", file=f)
-        print(f"     parameter W_ADDR = {self.w_addr}", file=f)
+        print(f"     W_DATA = {self.w_data},", file=f)
+        print(f"     DEPTH = 64,", file=f)
+        print(f"     W_ADDR = {self.w_addr}", file=f)
         print(f"     )", file=f)
         print(f"    (", file=f)
-        print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1\n", file=f)
+        print(f"     input clk,\n     input rst,\n\n     input ena,\n     input [W_ADDR-1:0] addra,\n     output [W_DATA-1:0] doa\n", file=f)
         print(f"     );", file=f)
 
-        print(f"\n     (* rom_style = \"block\" *)\n", file=f)
+        # print(f"\n     (* rom_style = \"block\" *)\n", file=f)
+        print(f"\n     logic [W_DATA-1:0] mem [DEPTH-1:0];\n", file=f)
 
-        print(f"     always_ff @(posedge clk)\n        begin\n           if(en1)\n             case(addr1)",file=f)
+        print(f"     always_ff @(posedge clk)\n        begin\n           if(ena)",file=f)
+        print(f"              doa = mem[addra];", file=f)
+        print(f"        end\n", file=f)
 
+
+        print(f"     initial begin", file=f)
         for i in range(len(self.lut)):
-            addr = i
-            addr_str = format(addr,f'0{self.w_addr}b')
             str = format(self.lut[i],f'0{hex_w}x')
-            print(f'               {self.w_addr}\'b{addr_str}: data1 <= {self.w_data}\'h{str};', file=f)
+            print(f"         mem[{i}] = {self.w_data}\'h{str};", file=f)
+        print(f"     end\n", file=f)
 
-        print(f"               default: data1 <= 0;", file=f)
-        print(f"           endcase", file=f)
-        print(f"        end", file=f)
 
-        print(f"\nendmodule: sqrt_rom", file=f)
+        # print(f"     always_ff @(posedge clk)\n        begin\n           if(ena)\n             case(addra)",file=f)
+        # for i in range(len(self.lut)):
+        #     addr = i
+        #     addr_str = format(addr,f'0{self.w_addr}b')
+        #     str = format(self.lut[i],f'0{hex_w}x')
+        #     print(f'               {self.w_addr}\'b{addr_str}: doa <= {self.w_data}\'h{str};', file=f)
+
+        # print(f"               default: doa <= 0;", file=f)
+        # print(f"           endcase", file=f)
+        # print(f"        end", file=f)
+
+        print(f"\nendmodule: rom_mem", file=f)
 
         pass
 
@@ -91,12 +104,14 @@ class SqrtClass(object):
 test = [632423816, 55374038]
 
 sqrt = SqrtClass()
-sqrt.w_din = 31
+sqrt.w_din = 22
 sqrt.depth = 256
 print(sqrt.w_data)
 print(sqrt.w_addr)
 print(sqrt.step)
 
-sqrt.dumpC("c/sqrt.hpp")
-sqrt.dumpVerilogROM("rtl/top/sqrt_rom.sv")
+print(sqrt.lut)
+
+# sqrt.dumpC("c/sqrt.hpp")
+sqrt.dumpVerilogROM("pygears/gears/svlib/rom_mem.sv")
 # print(sqrt.getSqrt(test[0]))

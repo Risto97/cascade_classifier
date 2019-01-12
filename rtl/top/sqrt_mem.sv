@@ -16,9 +16,9 @@ module sqrt_mem
     output [W_DATA-1:0] data1
     );
 
-   logic                en1;
-   logic [W_ADDR-1:0]   addr1;
-   logic [W_DATA-1:0]   data1_i;
+   logic                ena;
+   logic [W_ADDR-1:0]   addra;
+   logic [W_DATA-1:0]   doa;
 
    bram_rd_port #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
    rd_port (
@@ -30,18 +30,18 @@ module sqrt_mem
             .data1_valid(data1_valid),
             .data1_ready(data1_ready),
             .data1(data1),
-            .en1(en1),
-            .addr1(addr1),
-            .data1_i(data1_i)
+            .ena(ena),
+            .addra(addra),
+            .doa(doa)
             );
 
    sqrt_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
    sqrt_rom_i(
               .clk(clk),
               .rst(rst),
-              .en1(en1),
-              .addr1(addr1),
-              .data1(data1_i)
+              .en1(ena),
+              .addr1(addra),
+              .data1(doa)
               );
 
 endmodule: sqrt_mem

@@ -38,36 +38,54 @@ def dumpVerilogROM(data_l, w_addr_l, w_data_l, names, directory,
         w_hex_l.append(math.ceil(w_data/4))
 
     for i, (f, module, data, w_addr, w_data, w_hex) in enumerate(zip(files, module_names, data_l, w_addr_l, w_data_l, w_hex_l)):
+        depth = len(data)
         print(f"module {module}", file=f)
         print(f"  #(", file=f)
-        print(f"     parameter W_DATA = {w_data},", file=f)
-        print(f"     parameter W_ADDR = {w_addr}", file=f)
+        print(f"     W_DATA = {w_data},", file=f)
+        print(f"     DEPTH = {depth},", file=f)
+        print(f"     W_ADDR = {w_addr}", file=f)
         print(f"     )", file=f)
         print(f"    (", file=f)
-        print(f"     input clk,\n     input rst,\n\n     input en1,\n     input [W_ADDR-1:0] addr1,\n     output reg [W_DATA-1:0] data1", end='', file=f)
-        if(dual_port == True):
-            print(f",\n     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2", end='', file=f)
+        print(f"     input clk,\n     input rst,\n\n     input ena,\n     input [W_ADDR-1:0] addra,\n     output [W_DATA-1:0] doa", end='', file=f)
+        # if(dual_port == True):
+        #     print(f",\n     input en2,\n     input [W_ADDR-1:0] addr2,\n     output reg [W_DATA-1:0] data2", end='', file=f)
         print(f"\n    );", file=f)
 
         if block_ram is True:
             print(f"\n     (* rom_style = \"block\" *)\n", file=f)
 
-        for i in range(1, ports + 1):
-            print(f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})", file=f)
-            for addr in range(len(data)):
-                addr_str = format(addr, f'0{w_addr}b')
+        print(f"\n     logic [W_DATA-1:0] mem [DEPTH-1:0];\n", file=f)
 
-                if(data[addr] < 0):
-                    sign = "-"
-                else:
-                    sign = " "
-                data_str = format(abs(data[addr]), f'0{w_hex}x')
-                print(f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};',file=f)
+        print(f"     always_ff @(posedge clk)\n        begin\n           if(ena)",file=f)
+        print(f"              doa = mem[addra];", file=f)
+        print(f"        end\n", file=f)
+
+        print(f"     initial begin", file=f)
+        for addr in range(len(data)):
+            if(data[addr] < 0):
+                sign = "-"
+            else:
+                sign = " "
+            data_str = format(abs(data[addr]), f'0{w_hex}x')
+            print(f"         mem[{addr}] = {sign}{w_data}\'h{data_str};", file=f)
+        print(f"     end\n", file=f)
+
+        # for i in range(1, ports + 1):
+        #     print(f"     always_ff @(posedge clk)\n        begin\n           if(en{i})\n             case(addr{i})", file=f)
+        #     for addr in range(len(data)):
+        #         addr_str = format(addr, f'0{w_addr}b')
+
+        #         if(data[addr] < 0):
+        #             sign = "-"
+        #         else:
+        #             sign = " "
+        #         data_str = format(abs(data[addr]), f'0{w_hex}x')
+        #         print(f'               {w_addr}\'b{addr_str}: data{i} <= {sign}{w_data}\'h{data_str};',file=f)
 
 
-            print(f"               default: data{i} <= 0;", file=f)
-            print(f"           endcase", file=f)
-            print(f"        end\n", file=f)
+        #     print(f"               default: data{i} <= 0;", file=f)
+        #     print(f"           endcase", file=f)
+        #     print(f"        end\n", file=f)
 
         print(f"endmodule: {module}", file=f)
 

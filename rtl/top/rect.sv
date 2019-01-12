@@ -17,9 +17,9 @@ module rect
     output [W_DATA-1:0] data1
     );
 
-   logic                en1;
-   logic [W_ADDR-1:0]   addr1;
-   logic [W_DATA-1:0]   data1_i;
+   logic                ena;
+   logic [W_ADDR-1:0]   addra;
+   logic [W_DATA-1:0]   doa;
 
    bram_rd_port #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
    rd_port (
@@ -31,9 +31,9 @@ module rect
             .data1_valid(data1_valid),
             .data1_ready(data1_ready),
             .data1(data1),
-            .en1(en1),
-            .addr1(addr1),
-            .data1_i(data1_i)
+            .ena(ena),
+            .addra(addra),
+            .doa(doa)
             );
 
    generate
@@ -42,27 +42,27 @@ module rect
         rect_i(
                .clk(clk),
                .rst(rst),
-               .en1(en1),
-               .addr1(addr1),
-               .data1(data1_i)
+               .ena(ena),
+               .addra(addra),
+               .doa(doa)
                );
       else if(RECT_NUM == 1)
         rect1_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
         rect_i(
                .clk(clk),
                .rst(rst),
-               .en1(en1),
-               .addr1(addr1),
-               .data1(data1_i)
+               .ena(ena),
+               .addra(addra),
+               .doa(doa)
                );
       else if(RECT_NUM == 2)
         rect2_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
         rect_i(
                .clk(clk),
                .rst(rst),
-               .en1(en1),
-               .addr1(addr1),
-               .data1(data1_i)
+               .ena(ena),
+               .addra(addra),
+               .doa(doa)
                );
    endgenerate
 

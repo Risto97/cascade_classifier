@@ -17,9 +17,9 @@ module weight
     output [W_DATA-1:0] data1
     );
 
-   logic                en1;
-   logic [W_ADDR-1:0]   addr1;
-   logic [W_DATA-1:0]   data1_i;
+   logic                ena;
+   logic [W_ADDR-1:0]   addra;
+   logic [W_DATA-1:0]   doa;
 
    logic                dreg_valid, dreg_ready;
    logic [W_DATA-1:0]   dreg_data;
@@ -47,9 +47,9 @@ module weight
             .data1_valid(dreg_valid),
             .data1_ready(dreg_ready),
             .data1(dreg_data),
-            .en1(en1),
-            .addr1(addr1),
-            .data1_i(data1_i)
+            .ena(ena),
+            .addra(addra),
+            .doa(doa)
             );
 
    generate
@@ -58,27 +58,27 @@ module weight
         weight0_i(
                .clk(clk),
                .rst(rst),
-               .en1(en1),
-               .addr1(addr1),
-               .data1(data1_i)
+               .ena(ena),
+               .addra(addra),
+               .doa(doa)
                );
       else if(WEIGHT_NUM == 1)
         weights1_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
       weight1_i(
                 .clk(clk),
                .rst(rst),
-               .en1(en1),
-               .addr1(addr1),
-               .data1(data1_i)
+               .ena(ena),
+               .addra(addra),
+               .doa(doa)
                );
       else if(WEIGHT_NUM == 2)
         weights2_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
         weight2_i(
                .clk(clk),
                .rst(rst),
-               .en1(en1),
-               .addr1(addr1),
-               .data1(data1_i)
+               .ena(ena),
+               .addra(addra),
+               .doa(doa)
                );
    endgenerate
 

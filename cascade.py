@@ -246,14 +246,14 @@ class CascadeClass(object):
                     math.ceil(math.log(len(weight_l), 2))
                 ]
 
-                dumpVerilogROM(
-                    data_l,
-                    w_addr_l,
-                    w_data_l,
-                    names,
-                    directory,
-                    dual_port=dual_port,
-                    block_ram=block_ram)
+            dumpVerilogROM(
+                data_l,
+                w_addr_l,
+                w_data_l,
+                names,
+                directory,
+                dual_port=dual_port,
+                block_ram=block_ram)
 
     def dumpParamsVerilog(self, fn, img, scaleNum, x_ratio, y_ratio,
                           boundary_x, boundary_y):
