@@ -41,6 +41,14 @@ def stageThreshold_mem(rd_addr_if: TRdDin,
                          depth) -> b'Int[w_data]':
     pass
 
+@gear(outnames=outnames, sv_submodules=['featureCount_mem', 'rom_rd_port'])
+def featureCount_mem(rd_addr_if: TRdDin,
+                         *,
+                         w_addr=b'w_addr',
+                         w_data,
+                         depth) -> b'Uint[w_data]':
+    pass
+
 @gear(outnames=outnames, sv_submodules=['featureThreshold_mem', 'rom_rd_port'])
 def featureThreshold_mem(rd_addr_if: TRdDin,
                          *,

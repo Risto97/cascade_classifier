@@ -10,23 +10,21 @@ from functools import partial
 from frame_sum import frame_sum_tmp
 
 from pygears.common import czip, ccat, dreg, zip_sync, decoupler
+from pygears.common.rom import rom
+
+from sqrt_approx import createSqrtApprox
 
 from image import loadImage
 
 import math
 
-TRdDin = Uint['w_addr']
-outnames = ['rd_data_if']
-@gear(
-    outnames=outnames, sv_submodules=['sqrt_rom_mem', 'rom_rd_port'])
-def sqrt_rom(rd_addr_if: TRdDin,
-        *,
-        w_addr=b'w_addr',
-        depth=5) -> b'Uint[16]':
-    pass
-
 sqrt_addr_w = 31
 sqrt_rom_depth = 256
+
+sqrt = createSqrtApprox(sqrt_addr_w, sqrt_rom_depth)
+w_sqrt = sqrt[1]
+sqrt_mem = sqrt[0]
+
 
 @gear
 def stddev(ii_s: Queue[Uint['w_ii'], 2], sii_s: Queue[Uint['w_sii'], 2], *, frame_size=(25,25)):
@@ -46,7 +44,7 @@ def stddev(ii_s: Queue[Uint['w_ii'], 2], sii_s: Queue[Uint['w_sii'], 2], *, fram
 
     sqrt_addr = sub_s >> sqrt_shift | Uint[8]
 
-    stddev_res = sqrt_addr | sqrt_rom(depth=sqrt_rom_depth)
+    stddev_res = sqrt_addr | rom(data=sqrt_mem, dtype=Uint[w_sqrt])
 
     return stddev_res
 

@@ -1,5 +1,5 @@
-from pygears import gear, Intf
-from pygears.typing import Queue, Uint, Tuple
+from pygears import gear
+from pygears.typing import Queue, Uint
 
 from ii_gen import ii_gen
 from ii_gen import sii_gen
@@ -7,7 +7,7 @@ from img_ram import img_ram
 from rd_addrgen import rd_addrgen, addr_trans
 from stddev import stddev
 from frame_buffer import frame_buffer
-from classifier import classifier, get_leaf_num, leaf_vals
+from classifier import classifier
 from features import features
 from roms import feature_addr
 
@@ -17,10 +17,8 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-from pygears.common import shred, czip, ccat, zip_sync, flatten
-from pygears.cookbook import rng
+from pygears.common import flatten, shred
 
-from pygears.svgen import svgen
 
 from image import loadImage
 
@@ -30,6 +28,7 @@ img = loadImage("../datasets/rtl.pgm")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
+stage_num = 25
 w_addr = math.ceil(math.log(frame_size[0] * frame_size[1], 2))
 addr_t = Queue[Uint[w_addr], 2]
 din_t = Queue[Uint[8], 1]
@@ -46,6 +45,7 @@ def cascade_classifier(
         *,
         img_size=(240, 320),
         frame_size=(25, 25),
+        stage_num,
         feature_num):
 
     rd_addr_s = rd_addrgen(
@@ -68,14 +68,14 @@ def cascade_classifier(
 
     fb_rd = frame_buffer(ii_s | flatten, rect_addr, frame_size=frame_size)
 
-    classifier_o = classifier(fb_data=fb_rd, stddev=stddev_s, feature_num=feature_num) | leaf_vals(feature_num=feature_num)
+    dout = classifier(fb_data=fb_rd, stddev=stddev_s, feature_num=feature_num, stage_num=stage_num)
 
-    dout = classifier_o
     return dout
 
 
 if __name__ == "__main__":
 
+    # from pygears.sim.extens.vcd import VCD
     rd_seq = []
     for i in range(5):
         rd_seq_n = []
@@ -92,8 +92,10 @@ if __name__ == "__main__":
         img_size=img_size,
         frame_size=frame_size,
         feature_num=feature_num,
+        stage_num=stage_num,
         sim_cls=SimVerilated) | shred
 
+    # sim(outdir='build', extens=[VCD])
     sim(outdir='build',
         check_activity=True,
         extens=[partial(PyGearsView, live=True, reload=True)])

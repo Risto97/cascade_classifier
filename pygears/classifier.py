@@ -1,20 +1,15 @@
 from pygears import gear, Intf
 from pygears.typing import Array, Int, Uint, Queue, Tuple, Int
 
-from pygears.sim import sim
-from pygears.sim.modules import drv
-from pygears.sim.modules.verilator import SimVerilated
-from pygears_view import PyGearsView
-from functools import partial
-from pygears.sim.extens.vcd import VCD
 
 from pygears.cookbook import rng
-from pygears.common import ccat, dreg, shred, czip, zip_sync, cart, cart_sync, cart_sync_with
-from pygears.common import lt, mux, union_collapse, mux_valve
+from pygears.common import cart_sync_with, ccat
+from pygears.common import lt, mux_valve, union_collapse
 
-from features import features
-from roms import featureThreshold_mem, feature_addr
+from roms import featureThreshold_mem, feature_addr, stageThreshold_mem
 from roms import leafVal_mem
+from roms import featureCount_mem
+from gears.accum import accum_on_eot
 
 import math
 
@@ -24,7 +19,6 @@ w_rect_data = 20
 w_weight_data = 3
 w_leaf = 14
 
-import math
 
 
 @gear(svgen={'compile': True})
@@ -60,21 +54,37 @@ def get_leaf_num(din: Tuple[Int['w_sum'], Int['w_thr'], Uint['w_stddev']]):
 def leaf_vals(din: Uint[1], *, feature_num):
     rd_addr = feature_addr(feature_num=feature_num)
 
-    leaf0 = leafVal_mem(rd_addr,
-                        w_data=w_leaf,
-                        val_num=0,
-                        depth=feature_num)
-    leaf1 = leafVal_mem(rd_addr,
-                        w_data=w_leaf,
-                        val_num=1,
-                        depth=feature_num)
+    leaf0 = leafVal_mem(rd_addr, w_data=w_leaf, val_num=0, depth=feature_num)
+    leaf1 = leafVal_mem(rd_addr, w_data=w_leaf, val_num=1, depth=feature_num)
 
     sync = ccat(din, leaf0, leaf1)
     dout = mux_valve(sync[0], sync[1], sync[2]) | union_collapse
 
-    # dout = temp
     return dout
 
+@gear
+def get_stage_res(din: Int['w_din'], *, stage_num):
+    rd_addr = feature_addr(feature_num=stage_num)
+    stage_threshold = stageThreshold_mem(rd_addr, w_data=11, depth=stage_num)
+
+    sync = ccat(din, stage_threshold)
+
+    dout = lt(sync[1], sync[0])
+
+    return dout
+
+@gear
+def add_stage_eot(din: Int['w_leaf']):
+    stage_cnt = feature_addr(feature_num=25)
+    feature_num_in_stage = featureCount_mem(
+        stage_cnt, w_data=8, depth=25)
+
+    feature_cnt = ccat(0, feature_num_in_stage, 1) | rng
+    feature_cnt = feature_cnt | cart_sync_with(feature_num_in_stage)
+
+    dout = ccat(din, feature_cnt[1]) | Queue[din.dtype, 1]
+
+    return dout
 
 @gear
 def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
@@ -83,7 +93,8 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
                *,
                w_ii=b'w_ii',
                w_weight=b'w_weight',
-               feature_num):
+               feature_num,
+               stage_num):
 
     rect_data_t = Intf(Tuple[Uint[w_ii], Uint[1], Int[w_weight]])
     rect = []
@@ -103,44 +114,10 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     res = ccat(rect_sum, feature_threshold, stddev)
 
     leaf_num = res | get_leaf_num
+    leaf_val = leaf_num | leaf_vals(feature_num=feature_num) | add_stage_eot
 
-    leaf_val = leaf_num #| leaf_vals(feature_num=feature_num)
+    accum_stage = leaf_val | accum_on_eot(add_num=256)
 
-    return leaf_val
+    stage_res = accum_stage | get_stage_res(stage_num=stage_num)
 
-
-if __name__ == "__main__":
-    seq = []
-
-    for n in range(50):
-        seq_r = []
-        for r in range(4):
-            # if r == 0 or r == 3:
-            #     sign = 1
-            # else:
-            #     sign = 0
-            # weight = -3
-            # tmp = (50 + (r + 1) * (n + 5), sign, weight)
-            if r == 0:
-                tmp = (1761, 1, -3)
-            elif r == 1:
-                tmp = (6589, 0, -3)
-            elif r == 2:
-                tmp = (6142, 0, -3)
-            elif r == 3:
-                tmp = (27812, 1, -3)
-            seq_r.append(tmp)
-        seq.append(seq_r)
-
-    weighted_sum(
-        din=drv(t=Queue[Tuple[Uint[19], Uint[1], Int[3]], 1], seq=seq),
-        sim_cls=SimVerilated) | shred
-    # weighted_sum(din=drv(t=Queue[Uint[19], 1], seq=seq), sim_cls=SimVerilated) | shred
-
-    sim(outdir='build', extens=[VCD])
-
-    # sim(outdir='build',
-    #     check_activity=True,
-    #     extens=[partial(PyGearsView, live=True, reload=True)])
-
-    pass
+    return stage_res

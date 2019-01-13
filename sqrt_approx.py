@@ -101,17 +101,26 @@ class SqrtClass(object):
         pass
 
 
+def createSqrtApprox(w_din, depth):
+    sqrt = SqrtClass()
+    sqrt.w_din = 31
+    sqrt.depth = 256
+
+    w_data = math.ceil(math.log(max(sqrt.lut), 2))
+
+    return sqrt.lut, w_data
+
 test = [632423816, 55374038]
 
 sqrt = SqrtClass()
 sqrt.w_din = 31
 sqrt.depth = 256
-print(sqrt.w_data)
-print(sqrt.w_addr)
-print(sqrt.step)
+# print(sqrt.w_data)
+# print(sqrt.w_addr)
+# print(sqrt.step)
 
-print(sqrt.lut)
+# print(sqrt.lut)
 
 # sqrt.dumpC("c/sqrt.hpp")
-sqrt.dumpVerilogROM("pygears/gears/svlib/sqrt_rom_mem.sv")
+# sqrt.dumpVerilogROM("pygears/gears/svlib/sqrt_rom_mem.sv")
 # print(sqrt.getSqrt(test[0]))
