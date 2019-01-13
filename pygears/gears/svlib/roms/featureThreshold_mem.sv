@@ -1,8 +1,8 @@
-module rom
+module featureThreshold_mem
   #(
     W_DATA = 16,
     W_ADDR = 16,
-    DEPTH = 1024,
+    DEPTH = 1024
     )
    (
     input clk,
@@ -31,7 +31,7 @@ module rom
       .data_i(rd_data_s)
       );
 
-   rom_mem
+   featureThreshold_rom
      #(
        .W_DATA(W_DATA),
        .W_ADDR(W_ADDR),

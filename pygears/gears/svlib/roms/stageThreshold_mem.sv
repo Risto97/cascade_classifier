@@ -1,4 +1,4 @@
-module sqrt_rom
+module stageThreshold_mem
   #(
     W_DATA = 16,
     W_ADDR = 16,
@@ -31,7 +31,7 @@ module sqrt_rom
       .data_i(rd_data_s)
       );
 
-   sqrt_rom_mem
+   stageThreshold_rom
      #(
        .W_DATA(W_DATA),
        .W_ADDR(W_ADDR),

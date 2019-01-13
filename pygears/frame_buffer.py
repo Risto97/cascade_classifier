@@ -1,9 +1,9 @@
 from pygears import gear
-from pygears.typing import Queue, Uint
+from pygears.typing import Queue, Uint, Array, Int, Tuple
 
 from pygears.cookbook import sdp
 from pygears.cookbook.rng import rng
-from pygears.common import ccat, dreg, flatten
+from pygears.common import ccat, dreg, flatten, decoupler
 
 from gears.queue_ops import queue_one_by_one
 
@@ -12,7 +12,8 @@ import math
 
 @gear
 def frame_buffer(din: Queue[Uint['w_din'], 1],
-                 rd_addr: Queue[Uint['w_addr'], 2],
+                 # rd_addr: Queue[Uint['w_addr'], 2],
+                 rd_addr: Queue[Array[Tuple[Uint['w_rect'], Uint[1], Int['w_weight']], 3], 2],
                  *,
                  frame_size=(25, 25)):
     ##########Parameters###################
@@ -26,8 +27,16 @@ def frame_buffer(din: Queue[Uint['w_din'], 1],
 
     wr_sdp = ccat(wr_addr[0], din_i[0])
 
-    rd_data = sdp(wr_sdp, rd_addr_sdp[0], depth=ram_size)
+    rd_data0 = sdp(wr_sdp, rd_addr_sdp[0][0][0], depth=ram_size)
+    rd_data1 = sdp(wr_sdp, rd_addr_sdp[0][1][0], depth=ram_size)
+    rd_data2 = sdp(wr_sdp, rd_addr_sdp[0][2][0], depth=ram_size)
 
-    dout = ccat(rd_data, rd_addr_sdp[1] | dreg) | Queue[rd_data.dtype, 2]
+    rd_data0 = ccat(rd_data0, rd_addr[0][0][1], rd_addr[0][0][2])
+    rd_data1 = ccat(rd_data1, rd_addr[0][1][1], rd_addr[0][1][2])
+    rd_data2 = ccat(rd_data2, rd_addr[0][2][1], rd_addr[0][2][2])
+
+    rd_data = ccat(rd_data0, rd_data1, rd_data2) | Array[rd_data0.dtype, 3]
+
+    dout = ccat(rd_data, rd_addr[1] | dreg) | Queue[rd_data.dtype, 2]
 
     return dout

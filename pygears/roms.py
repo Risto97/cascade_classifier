@@ -7,13 +7,47 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-from pygears.common import cart, ccat, shred
+from pygears.common import ccat, shred, dreg, decoupler, fifo, zip_sync, cart
 from pygears.common import serialize
+from pygears.cookbook import rng
 from gears.serialize_queue import serialize_queue
 
 TRdDin = Uint['w_addr']
 outnames = ['rd_data_if']
 
+import math
+@gear
+def feature_addr(*, feature_num):
+    w_feat_addr = math.ceil(math.log(feature_num, 2))
+    cfg_rng = ccat(0, Uint[w_feat_addr](feature_num), 1)
+    rd_addr_feat = cfg_rng | rng | Uint[w_feat_addr]
+
+    return rd_addr_feat
+
+@gear(outnames=outnames, sv_submodules=['leafVal_mem', 'rom_rd_port'])
+def leafVal_mem(rd_addr_if: TRdDin,
+                *,
+                w_addr=b'w_addr',
+                w_data,
+                val_num,
+                depth) -> b'Int[w_data]':
+    pass
+
+@gear(outnames=outnames, sv_submodules=['stageThreshold_mem', 'rom_rd_port'])
+def stageThreshold_mem(rd_addr_if: TRdDin,
+                         *,
+                         w_addr=b'w_addr',
+                         w_data,
+                         depth) -> b'Int[w_data]':
+    pass
+
+@gear(outnames=outnames, sv_submodules=['featureThreshold_mem', 'rom_rd_port'])
+def featureThreshold_mem(rd_addr_if: TRdDin,
+                         *,
+                         w_addr=b'w_addr',
+                         w_data,
+                         depth) -> b'Int[w_data]':
+    pass
 
 @gear(outnames=outnames, sv_submodules=['features_rom', 'rom_rd_port'])
 def features_rom(rd_addr_if: TRdDin,
@@ -90,14 +124,20 @@ if __name__ == "__main__":
     w_weight_data = 3
     feature_size = (25, 25)
     seq = list(range(feature_num))
-    rects_mem(
+    # rects_mem(
+    #     rd_addr_if=drv(t=Uint[12], seq=seq),
+    #     inst_num=0,
+    #     feature_num=feature_num,
+    #     w_rect_data=w_rect_data,
+    #     w_weight_data=w_weight_data,
+    #     feature_size=feature_size,
+    #     sim_cls=SimVerilated) | shred
+    featureThreshold_mem(
         rd_addr_if=drv(t=Uint[12], seq=seq),
-        inst_num=0,
-        feature_num=feature_num,
-        w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data,
-        feature_size=feature_size,
+        w_data=13,
+        depth=feature_num,
         sim_cls=SimVerilated) | shred
+
 
     sim(outdir='build',
         check_activity=True,

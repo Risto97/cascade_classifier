@@ -18,14 +18,14 @@ import math
 TRdDin = Uint['w_addr']
 outnames = ['rd_data_if']
 @gear(
-    outnames=outnames, sv_submodules=['sqrt_rom', 'rom_rd_port'])
-def rom(rd_addr_if: TRdDin,
+    outnames=outnames, sv_submodules=['sqrt_rom_mem', 'rom_rd_port'])
+def sqrt_rom(rd_addr_if: TRdDin,
         *,
         w_addr=b'w_addr',
         depth=5) -> b'Uint[16]':
     pass
 
-sqrt_addr_w = 22
+sqrt_addr_w = 31
 sqrt_rom_depth = 256
 
 @gear
@@ -46,7 +46,7 @@ def stddev(ii_s: Queue[Uint['w_ii'], 2], sii_s: Queue[Uint['w_sii'], 2], *, fram
 
     sqrt_addr = sub_s >> sqrt_shift | Uint[8]
 
-    stddev_res = sqrt_addr | rom(depth=sqrt_rom_depth)
+    stddev_res = sqrt_addr | sqrt_rom(depth=sqrt_rom_depth)
 
     return stddev_res
 
