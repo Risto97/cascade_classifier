@@ -143,6 +143,43 @@ class CascadeClass(object):
 
         print(f"\n#endif", file=f)
 
+    def dumpFeatureCountVerilogROM(self,
+                                   directory,
+                                   dual_port=False,
+                                   block_ram=False):
+        names = ["featureCount"]
+        if (directory[-1] != '/'):
+            directory = directory + '/'
+
+        feature_num = []
+        accum = 0
+        for stage in self.stages:
+            accum += stage.maxWeakCount
+            feature_num.append(accum)
+
+        data_l = [feature_num]
+        w_data_l = [math.ceil(math.log(self.maxWeakCount, 2))]
+        w_addr_l = [math.ceil(math.log(len(feature_num), 2))]
+
+        dumpVerilogROM(
+            data_l,
+            w_addr_l,
+            w_data_l,
+            names,
+            directory,
+            dual_port=dual_port,
+            block_ram=block_ram)
+
+    def getStageThreshold(self):
+        threshold = []
+        for stage in self.stages:
+            threshold.append(stage.stageThreshold)
+
+        max_data = max(abs(max(threshold)), abs(min(threshold)))
+        w_data = math.ceil(math.log(max_data, 2)) + 1
+
+        return threshold, w_data
+
     def dumpStageVerilogROM(self, directory, dual_port=False, block_ram=False):
         names = ["stageThreshold"]
         if (directory[-1] != '/'):
@@ -170,6 +207,31 @@ class CascadeClass(object):
             directory,
             dual_port=dual_port,
             block_ram=block_ram)
+
+    def getFeatureThresholds(self):
+        threshold = []
+        for stage in self.stages:
+            for feature in stage.features:
+                threshold.append(feature.threshold)
+
+        max_data = max(abs(max(threshold)), abs(min(threshold)))
+        w_data = math.ceil(math.log(max_data, 2)) + 1
+
+        return threshold, w_data
+
+    def getLeafVals(self, leaf_num):
+        leafVal = []
+        for stage in self.stages:
+            for feature in stage.features:
+                if leaf_num == 0:
+                    leafVal.append(feature.passVal)
+                elif leaf_num == 1:
+                    leafVal.append(feature.failVal)
+
+        max_data = max(abs(max(leafVal)), abs(min(leafVal)))
+        w_data = math.ceil(math.log(max_data, 2)) + 1
+
+        return leafVal, w_data
 
     def dumpFeatureVerilogROM(self, directory, dual_port=False,
                               block_ram=True):
@@ -205,6 +267,7 @@ class CascadeClass(object):
             dual_port=dual_port,
             block_ram=block_ram)
 
+    ## Dumped format for rect is {A, width, height} = Tuple[Uint[2*w_rect], Uint[w_rect], Uint[w_rect]]
     def dumpRectVerilogROM(self, directory, dual_port=False, block_ram=False):
         for r in range(3):
             names = [f"rect{r}", f"weights{r}"]
@@ -279,31 +342,37 @@ class CascadeClass(object):
 
         print(f"parameter [SCALE_NUM*W_RATIO-1:0] X_RATIO =", end='{', file=f)
         for enum, val in enumerate(reversed(x_ratio)):
-            if(enum < len(x_ratio)-1):
-                print(f"{w_ratio}'d{val}",end=',', file=f)
+            if (enum < len(x_ratio) - 1):
+                print(f"{w_ratio}'d{val}", end=',', file=f)
             else:
-                print(f"{w_ratio}'d{val}",end='};\n', file=f)
+                print(f"{w_ratio}'d{val}", end='};\n', file=f)
 
         print(f"parameter [SCALE_NUM*W_RATIO-1:0] Y_RATIO =", end='{', file=f)
         for enum, val in enumerate(reversed(y_ratio)):
-            if(enum < len(y_ratio)-1):
-                print(f"{w_ratio}'d{val}",end=',', file=f)
+            if (enum < len(y_ratio) - 1):
+                print(f"{w_ratio}'d{val}", end=',', file=f)
             else:
-                print(f"{w_ratio}'d{val}",end='};\n', file=f)
+                print(f"{w_ratio}'d{val}", end='};\n', file=f)
 
-        print(f"\nparameter [SCALE_NUM*W_BOUNDARY-1:0] X_BOUNDARY =", end='{', file=f)
+        print(
+            f"\nparameter [SCALE_NUM*W_BOUNDARY-1:0] X_BOUNDARY =",
+            end='{',
+            file=f)
         for enum, val in enumerate(reversed(boundary_x)):
-            if(enum < len(boundary_x)-1):
-                print(f"{w_boundary}'d{val}",end=',', file=f)
+            if (enum < len(boundary_x) - 1):
+                print(f"{w_boundary}'d{val}", end=',', file=f)
             else:
-                print(f"{w_boundary}'d{val}",end='};', file=f)
+                print(f"{w_boundary}'d{val}", end='};', file=f)
 
-        print(f"\nparameter [SCALE_NUM*W_BOUNDARY-1:0] Y_BOUNDARY =", end='{', file=f)
+        print(
+            f"\nparameter [SCALE_NUM*W_BOUNDARY-1:0] Y_BOUNDARY =",
+            end='{',
+            file=f)
         for enum, val in enumerate(reversed(boundary_y)):
-            if(enum < len(boundary_y)-1):
-                print(f"{w_boundary}'d{val}",end=',', file=f)
+            if (enum < len(boundary_y) - 1):
+                print(f"{w_boundary}'d{val}", end=',', file=f)
             else:
-                print(f"{w_boundary}'d{val}",end='};\n', file=f)
+                print(f"{w_boundary}'d{val}", end='};\n', file=f)
 
         print(f"\nendpackage: params", file=f)
         print(f"`endif", file=f)
@@ -321,6 +390,26 @@ class CascadeClass(object):
                 if len(feature.rects) > max_rect_count:
                     max_rect_count = len(feature.rects)
         return max_rect_count
+
+    def getFeatureStagesCount(self):
+        feature_num = []
+        accum = 0
+        for stage in self.stages:
+            accum += stage.maxWeakCount
+            feature_num.append(accum)
+
+        w_data = math.ceil(math.log(max(feature_num), 2))
+
+        data_l = []
+        for i in range(len(feature_num)):
+            if i == 0:
+                temp = (0 << w_data) | feature_num[i]
+            else:
+                temp = (feature_num[i-1] << w_data) | feature_num[i]
+
+            data_l.append(temp)
+
+        return data_l, w_data * 2
 
 
 class StageClass(object):
@@ -387,6 +476,15 @@ class RectClass(object):
 
         return sum
 
+def create_cascade(xml_file):
+    from create_cascade import createCascade
+    import xmltodict
+
+    with open(xml_file) as fd:
+        doc = xmltodict.parse(fd.read())
+    cascade = createCascade(doc)
+
+    return cascade
 
 if __name__ == "__main__":
     from create_cascade import createCascade
@@ -399,68 +497,75 @@ if __name__ == "__main__":
 
     cascade = createCascade(doc)
 
-    # cnt = 0
-    # for stage in cascade.stages[:2]:
-    #     print("##########################")
-    #     for feature in stage.features:
-    #         print(cnt)
-    #         Ax = feature.rects[0].A['x']
-    #         Ay = feature.rects[0].A['y']
-    #         Bx = feature.rects[0].B['x']
-    #         By = feature.rects[0].B['y']
-    #         Cx = feature.rects[0].C['x']
-    #         Cy = feature.rects[0].C['y']
-    #         Dx = feature.rects[0].D['x']
-    #         Dy = feature.rects[0].D['y']
-    #         A = Ax + Ay*25
-    #         B = Bx + By*25
-    #         C = Cx + Cy*25
-    #         D = Dx + Dy*25
-    #         weight = feature.rects[0].weight//4096
+    cnt = 0
+    for stage in cascade.stages[:1]:
+        print("##########################")
+        for feature in stage.features:
+            print(cnt)
+            Ax = feature.rects[0].A['x']
+            Ay = feature.rects[0].A['y']
+            Bx = feature.rects[0].B['x']
+            By = feature.rects[0].B['y']
+            Cx = feature.rects[0].C['x']
+            Cy = feature.rects[0].C['y']
+            Dx = feature.rects[0].D['x']
+            Dy = feature.rects[0].D['y']
+            A = Ax + Ay * 25
+            B = Bx + By * 25
+            C = Cx + Cy * 25
+            D = Dx + Dy * 25
+            weight = feature.rects[0].weight // 4096
+            # print(Ax, Ay)
+            # print(Bx, By)
+            # print(Cx, Cy)
+            # print(Dx, Dy)
+            # print( Ax + Ay*25, Dx-Ax, Dy-Ay)
+            print("A ", A, "B ", B, "C ", C, "D ", D, weight)
 
-    #         # print(feature.rects[0].__dict__)
-    #         print(A,B,D,C, weight)
-    #         Ax = feature.rects[1].A['x']
-    #         Ay = feature.rects[1].A['y']
-    #         Bx = feature.rects[1].B['x']
-    #         By = feature.rects[1].B['y']
-    #         Cx = feature.rects[1].C['x']
-    #         Cy = feature.rects[1].C['y']
-    #         Dx = feature.rects[1].D['x']
-    #         Dy = feature.rects[1].D['y']
-    #         A = Ax + Ay*25
-    #         B = Bx + By*25
-    #         C = Cx + Cy*25
-    #         D = Dx + Dy*25
-    #         weight = feature.rects[1].weight//4096
+            #         # print(feature.rects[0].__dict__)
+            # print(A,B,D,C, weight)
+            Ax = feature.rects[1].A['x']
+            Ay = feature.rects[1].A['y']
+            Bx = feature.rects[1].B['x']
+            By = feature.rects[1].B['y']
+            Cx = feature.rects[1].C['x']
+            Cy = feature.rects[1].C['y']
+            Dx = feature.rects[1].D['x']
+            Dy = feature.rects[1].D['y']
+            A = Ax + Ay * 25
+            B = Bx + By * 25
+            C = Cx + Cy * 25
+            D = Dx + Dy * 25
+            weight = feature.rects[1].weight // 4096
+            print("A ", A, "B ", B, "C ", C, "D ", D, weight)
 
-    #         # print(feature.rects[0].__dict__)
-    #         print(A,B,D,C, weight)
-    #         try:
-    #             Ax = feature.rects[2].A['x']
-    #             Ay = feature.rects[2].A['y']
-    #             Bx = feature.rects[2].B['x']
-    #             By = feature.rects[2].B['y']
-    #             Cx = feature.rects[2].C['x']
-    #             Cy = feature.rects[2].C['y']
-    #             Dx = feature.rects[2].D['x']
-    #             Dy = feature.rects[2].D['y']
-    #             A = Ax + Ay*25
-    #             B = Bx + By*25
-    #             C = Cx + Cy*25
-    #             D = Dx + Dy*25
-    #             weight = feature.rects[2].weight//4096
-    #         except:
-    #             A = 0
-    #             B = 0
-    #             C = 0
-    #             D = 0
-    #             weight = 0
+            #         # print(feature.rects[0].__dict__)
+            #         print(A,B,D,C, weight)
+            try:
+                Ax = feature.rects[2].A['x']
+                Ay = feature.rects[2].A['y']
+                Bx = feature.rects[2].B['x']
+                By = feature.rects[2].B['y']
+                Cx = feature.rects[2].C['x']
+                Cy = feature.rects[2].C['y']
+                Dx = feature.rects[2].D['x']
+                Dy = feature.rects[2].D['y']
+                A = Ax + Ay * 25
+                B = Bx + By * 25
+                C = Cx + Cy * 25
+                D = Dx + Dy * 25
+                weight = feature.rects[2].weight // 4096
+            except:
+                A = 0
+                B = 0
+                C = 0
+                D = 0
+                weight = 0
+            print("A ", A, "B ", B, "C ", C, "D ", D, weight)
 
-    #         # print(feature.rects[0].__dict__)
-    #         print(A,B,D,C, weight)
-    #         print("----------------")
-    #         cnt += 1
+            # print(feature.rects[0].__dict__)
+            print("----------------")
+            cnt += 1
 
     # cascade.dumpParamsVerilog("rtl/top/params.sv")
 

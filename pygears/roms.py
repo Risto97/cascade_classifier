@@ -1,4 +1,4 @@
-from pygears import gear
+from pygears import gear, Intf
 from pygears.typing import Array, Int, Uint, Queue, Tuple
 
 from pygears.sim import sim
@@ -24,33 +24,14 @@ def feature_addr(*, feature_num):
 
     return rd_addr_feat
 
-@gear(outnames=outnames, sv_submodules=['leafVal_mem', 'rom_rd_port'])
-def leafVal_mem(rd_addr_if: TRdDin,
-                *,
-                w_addr=b'w_addr',
-                w_data,
-                val_num,
-                depth) -> b'Int[w_data]':
+@gear
+def feat_addr(*, feature_num, stage_num):
+    rd_addr = feature_addr(feature_num=stage_num)
+
     pass
 
 @gear(outnames=outnames, sv_submodules=['stageThreshold_mem', 'rom_rd_port'])
 def stageThreshold_mem(rd_addr_if: TRdDin,
-                         *,
-                         w_addr=b'w_addr',
-                         w_data,
-                         depth) -> b'Int[w_data]':
-    pass
-
-@gear(outnames=outnames, sv_submodules=['featureCount_mem', 'rom_rd_port'])
-def featureCount_mem(rd_addr_if: TRdDin,
-                         *,
-                         w_addr=b'w_addr',
-                         w_data,
-                         depth) -> b'Uint[w_data]':
-    pass
-
-@gear(outnames=outnames, sv_submodules=['featureThreshold_mem', 'rom_rd_port'])
-def featureThreshold_mem(rd_addr_if: TRdDin,
                          *,
                          w_addr=b'w_addr',
                          w_data,
@@ -93,7 +74,7 @@ def calc_rect_coords(
 @gear
 def rects_mem(rd_addr_if: TRdDin, *, inst_num, w_rect_data, w_weight_data,
               feature_num, feature_size):
-    w_rect = int(w_rect_data / 2)
+    w_rect = w_rect_data // 2
     rect_tuple = features_rom(
         rd_addr_if,
         rects_weights=0,
@@ -111,7 +92,12 @@ def rects_mem(rd_addr_if: TRdDin, *, inst_num, w_rect_data, w_weight_data,
         w_data=w_weight_data,
         depth=feature_num) | Int[w_weight_data]
 
-    return cart(rect_coords, weight)
+    data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[w_weight_data]])
+
+    cart_sync = cart(rect_coords, weight)
+    tuple_rect = ccat(cart_sync[0][0], cart_sync[0][1]) | data_t.dtype
+    dout = ccat(tuple_rect, cart_sync[1]) | Queue[data_t.dtype, 1]
+    return dout
 
 
 @gear

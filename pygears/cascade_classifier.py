@@ -9,7 +9,8 @@ from stddev import stddev
 from frame_buffer import frame_buffer
 from classifier import classifier
 from features import features
-from roms import feature_addr
+# from roms import feature_addr
+from addr_utils import feature_addr
 
 from pygears.sim import sim
 from pygears.sim.modules import drv
@@ -56,9 +57,9 @@ def cascade_classifier(
     ii_s = img_s | ii_gen(frame_size=frame_size)
     sii_s = img_s | sii_gen(frame_size=frame_size)
 
-    stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
+    stddev_s = stddev(ii_s, sii_s, frame_size=frame_size) | shred
 
-    rd_addr_feat = feature_addr(feature_num=feature_num)
+    rd_addr_feat = feature_addr(feature_num=feature_num, stage_num=stage_num)
     rect_addr = features(
         rd_addr_feat,
         feature_num=feature_num,
@@ -66,11 +67,13 @@ def cascade_classifier(
         w_rect_data=w_rect_data,
         w_weight_data=w_weight_data)
 
-    fb_rd = frame_buffer(ii_s | flatten, rect_addr, frame_size=frame_size)
+    # fb_rd = frame_buffer(ii_s | flatten, rect_addr, frame_size=frame_size)
 
-    dout = classifier(fb_data=fb_rd, stddev=stddev_s, feature_num=feature_num, stage_num=stage_num)
+    # dout = classifier(fb_data=fb_rd, stddev=stddev_s, feature_num=feature_num, stage_num=stage_num)
 
-    return dout
+    # dout = rect_addr
+    # dout = rd_addr_feat
+    return rect_addr
 
 
 if __name__ == "__main__":

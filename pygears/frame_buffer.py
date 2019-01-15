@@ -13,14 +13,14 @@ import math
 @gear
 def frame_buffer(din: Queue[Uint['w_din'], 1],
                  # rd_addr: Queue[Uint['w_addr'], 2],
-                 rd_addr: Queue[Array[Tuple[Uint['w_rect'], Uint[1], Int['w_weight']], 3], 2],
+                 rd_addr: Queue[Array[Tuple[Uint['w_rect'], Uint[1], Int['w_weight']], 3], 3],
                  *,
                  frame_size=(25, 25)):
     ##########Parameters###################
     ram_size = frame_size[0] * frame_size[1]
     w_addr = math.ceil(math.log(ram_size, 2))
     #######################################
-    din_i, rd_addr_sdp = queue_one_by_one(din, rd_addr | flatten)
+    din_i, rd_addr_sdp = queue_one_by_one(din, rd_addr | flatten(lvl=2))
 
     cfg_rng = ccat(0, Uint[w_addr](ram_size), 1)
     wr_addr = cfg_rng | rng
@@ -37,6 +37,6 @@ def frame_buffer(din: Queue[Uint['w_din'], 1],
 
     rd_data = ccat(rd_data0, rd_data1, rd_data2) | Array[rd_data0.dtype, 3]
 
-    dout = ccat(rd_data, rd_addr[1] | dreg) | Queue[rd_data.dtype, 2]
+    dout = ccat(rd_data, rd_addr[1] | dreg) | Queue[rd_data.dtype, 3]
 
     return dout

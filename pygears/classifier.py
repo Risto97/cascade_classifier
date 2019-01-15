@@ -5,10 +5,9 @@ from pygears.typing import Array, Int, Uint, Queue, Tuple, Int
 from pygears.cookbook import rng
 from pygears.common import cart_sync_with, ccat
 from pygears.common import lt, mux_valve, union_collapse
+from pygears.common import rom
 
-from roms import featureThreshold_mem, feature_addr, stageThreshold_mem
-from roms import leafVal_mem
-from roms import featureCount_mem
+from roms import feature_addr
 from gears.accum import accum_on_eot
 
 import math
@@ -19,6 +18,20 @@ w_rect_data = 20
 w_weight_data = 3
 w_leaf = 14
 
+## change this ##
+from cascade import create_cascade
+cascade_model = create_cascade("../models/haarcascade_frontalface_default.xml")
+
+featureThresholds_ret = cascade_model.getFeatureThresholds()
+featureThresholds_l = featureThresholds_ret[0]
+w_feat_thresh = featureThresholds_ret[1]
+
+leafVal0_l, w_leafVal0 = cascade_model.getLeafVals(0)
+leafVal1_l, w_leafVal1 = cascade_model.getLeafVals(1)
+w_leafVal = max(w_leafVal0, w_leafVal1)
+
+stageThreshold_l, w_stage_thresh = cascade_model.getStageThreshold
+#################
 
 
 @gear(svgen={'compile': True})
@@ -54,8 +67,8 @@ def get_leaf_num(din: Tuple[Int['w_sum'], Int['w_thr'], Uint['w_stddev']]):
 def leaf_vals(din: Uint[1], *, feature_num):
     rd_addr = feature_addr(feature_num=feature_num)
 
-    leaf0 = leafVal_mem(rd_addr, w_data=w_leaf, val_num=0, depth=feature_num)
-    leaf1 = leafVal_mem(rd_addr, w_data=w_leaf, val_num=1, depth=feature_num)
+    leaf0 = rom(rd_addr, data=leafVal0_l, dtype=Int[w_leafVal])
+    leaf1 = rom(rd_addr, data=leafVal1_l, dtype=Int[w_leafVal])
 
     sync = ccat(din, leaf0, leaf1)
     dout = mux_valve(sync[0], sync[1], sync[2]) | union_collapse
@@ -65,7 +78,8 @@ def leaf_vals(din: Uint[1], *, feature_num):
 @gear
 def get_stage_res(din: Int['w_din'], *, stage_num):
     rd_addr = feature_addr(feature_num=stage_num)
-    stage_threshold = stageThreshold_mem(rd_addr, w_data=11, depth=stage_num)
+    # stage_threshold = stageThreshold_mem(rd_addr, w_data=11, depth=stage_num)
+    stage_threshold = rom(rd_addr, data=stageThreshold_l, dtype=Int[w_stage_thresh])
 
     sync = ccat(din, stage_threshold)
 
@@ -73,22 +87,22 @@ def get_stage_res(din: Int['w_din'], *, stage_num):
 
     return dout
 
-@gear
-def add_stage_eot(din: Int['w_leaf']):
-    stage_cnt = feature_addr(feature_num=25)
-    feature_num_in_stage = featureCount_mem(
-        stage_cnt, w_data=8, depth=25)
+# @gear
+# def add_stage_eot(din: Int['w_leaf']):
+#     stage_cnt = feature_addr(feature_num=25)
+#     feature_num_in_stage = featureCount_mem(
+#         stage_cnt, w_data=8, depth=25)
 
-    feature_cnt = ccat(0, feature_num_in_stage, 1) | rng
-    feature_cnt = feature_cnt | cart_sync_with(feature_num_in_stage)
+#     feature_cnt = ccat(0, feature_num_in_stage, 1) | rng
+#     feature_cnt = feature_cnt | cart_sync_with(feature_num_in_stage)
 
-    dout = ccat(din, feature_cnt[1]) | Queue[din.dtype, 1]
+#     dout = ccat(din, feature_cnt[1]) | Queue[din.dtype, 1]
 
-    return dout
+#     return dout
 
 @gear
 def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
-        'w_weight']]], 2],
+        'w_weight']]], 3],
                stddev: Uint['w_stddev'],
                *,
                w_ii=b'w_ii',
@@ -106,15 +120,17 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     rect_sum = rect[0] + rect[1] + rect[2]
 
     feat_thr_addr = feature_addr(feature_num=feature_num)
-    feature_threshold = featureThreshold_mem(
-        feat_thr_addr, depth=feature_num, w_data=13)
+    feature_threshold = rom(
+        feat_thr_addr, data=featureThresholds_l, dtype=Int[w_feat_thresh])
 
     stddev = stddev | cart_sync_with(
         ccat(rect_sum, 0) | Queue[rect_sum.dtype, 1])
     res = ccat(rect_sum, feature_threshold, stddev)
 
     leaf_num = res | get_leaf_num
-    leaf_val = leaf_num | leaf_vals(feature_num=feature_num) | add_stage_eot
+    leaf_val = leaf_num | leaf_vals(feature_num=feature_num)
+
+    leaf_val = ccat(leaf_val, fb_data[1][1]) | Queue[Int[13], 1]
 
     accum_stage = leaf_val | accum_on_eot(add_num=256)
 
