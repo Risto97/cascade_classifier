@@ -267,6 +267,54 @@ class CascadeClass(object):
             dual_port=dual_port,
             block_ram=block_ram)
 
+    def getRectCoords(self, rect_num):
+        max_feature_size = max(self.featureSize)
+        w_rect = math.ceil(math.log(max_feature_size, 2))
+        r = rect_num
+
+        rect_l = []
+        for s, stage in enumerate(self.stages):
+            for feature in stage.features:
+                try:
+                    A = [feature.rects[r].A['x'], feature.rects[r].A['y']]
+                    D = [feature.rects[r].D['x'], feature.rects[r].D['y']]
+                    if (A[0] > D[0] | A[1] > D[1]):
+                        print(
+                            "A is not top left corner, or D is not bottom right corner"
+                        )
+                except:
+                    A = [0, 0]
+                    D = [0, 0]
+
+                width = D[0] - A[0]
+                height = D[1] - A[1]
+
+                rect_ccat = (A[0] + A[1] *
+                             (self.featureSize[1] + 1)) << (w_rect * 2) # TODO feature_size should be +1 in cascade class
+                rect_ccat |= width << w_rect
+                rect_ccat |= height
+
+                rect_l.append(rect_ccat)
+
+        w_data = 4 * w_rect
+
+        return rect_l, w_data
+
+    def getRectWeights(self, rect_num):
+        r = rect_num
+        w_data = 3
+
+        weights_l = []
+        for s, stage in enumerate(self.stages):
+            for feature in stage.features:
+                try:
+                    weight = feature.rects[r].weight // 4096
+                except:
+                    weight = 0
+                weights_l.append(weight)
+
+        return weights_l, w_data
+
     ## Dumped format for rect is {A, width, height} = Tuple[Uint[2*w_rect], Uint[w_rect], Uint[w_rect]]
     def dumpRectVerilogROM(self, directory, dual_port=False, block_ram=False):
         for r in range(3):
@@ -405,7 +453,7 @@ class CascadeClass(object):
             if i == 0:
                 temp = (0 << w_data) | feature_num[i]
             else:
-                temp = (feature_num[i-1] << w_data) | feature_num[i]
+                temp = (feature_num[i - 1] << w_data) | feature_num[i]
 
             data_l.append(temp)
 
@@ -476,6 +524,7 @@ class RectClass(object):
 
         return sum
 
+
 def create_cascade(xml_file):
     from create_cascade import createCascade
     import xmltodict
@@ -485,6 +534,7 @@ def create_cascade(xml_file):
     cascade = createCascade(doc)
 
     return cascade
+
 
 if __name__ == "__main__":
     from create_cascade import createCascade

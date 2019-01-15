@@ -9,7 +9,6 @@ from stddev import stddev
 from frame_buffer import frame_buffer
 from classifier import classifier
 from features import features
-# from roms import feature_addr
 from addr_utils import feature_addr
 
 from pygears.sim import sim
@@ -24,6 +23,7 @@ from pygears.common import flatten, shred
 from image import loadImage
 
 import math
+
 
 img = loadImage("../datasets/rtl.pgm")
 img_size = img.shape
@@ -48,16 +48,18 @@ def cascade_classifier(
         frame_size=(25, 25),
         stage_num,
         feature_num):
+    ram_size = img_size[0] * img_size[1]
+    w_addr_img = math.ceil(math.log(ram_size, 2))
 
     rd_addr_s = rd_addrgen(
         img_size=img_size, frame_size=frame_size) | addr_trans(
-            img_size=img_size) | Queue[Uint[12], 3]
+            img_size=img_size) | Queue[Uint[w_addr_img], 3]
     img_s = img_ram(din, rd_addr_s, img_size=img_size)
 
     ii_s = img_s | ii_gen(frame_size=frame_size)
     sii_s = img_s | sii_gen(frame_size=frame_size)
 
-    stddev_s = stddev(ii_s, sii_s, frame_size=frame_size) | shred
+    stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
 
     rd_addr_feat = feature_addr(feature_num=feature_num, stage_num=stage_num)
     rect_addr = features(
@@ -65,7 +67,7 @@ def cascade_classifier(
         feature_num=feature_num,
         feature_size=frame_size,
         w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data)
+        w_weight_data=w_weight_data) | shred
 
     # fb_rd = frame_buffer(ii_s | flatten, rect_addr, frame_size=frame_size)
 
@@ -73,7 +75,7 @@ def cascade_classifier(
 
     # dout = rect_addr
     # dout = rd_addr_feat
-    return rect_addr
+    return stddev_s
 
 
 if __name__ == "__main__":

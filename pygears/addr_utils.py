@@ -43,7 +43,7 @@ def feature_addr(*, feature_num, stage_num):
     stage_counter = stage_counter | cart_sync_with(feature_cnt)
 
     dout_eot = ccat(feature_cnt[1], stage_counter[1]) | Uint[2]
-    feature_cnt = ccat(feature_cnt[0], dout_eot) | Queue[Uint[w_stage_cnt/2], 2]
+    feature_cnt = ccat(feature_cnt[0], dout_eot) | Queue[Uint[int(w_stage_cnt/2)], 2]
 
     return feature_cnt
 

@@ -1,13 +1,12 @@
 from pygears import gear, Intf
 from pygears.typing import Array, Int, Uint, Queue, Tuple, Int
 
-
 from pygears.cookbook import rng
 from pygears.common import cart_sync_with, ccat
 from pygears.common import lt, mux_valve, union_collapse
 from pygears.common import rom
 
-from roms import feature_addr
+from addr_utils import rng_cnt
 from gears.accum import accum_on_eot
 
 import math
@@ -30,7 +29,7 @@ leafVal0_l, w_leafVal0 = cascade_model.getLeafVals(0)
 leafVal1_l, w_leafVal1 = cascade_model.getLeafVals(1)
 w_leafVal = max(w_leafVal0, w_leafVal1)
 
-stageThreshold_l, w_stage_thresh = cascade_model.getStageThreshold
+stageThreshold_l, w_stage_thresh = cascade_model.getStageThreshold()
 #################
 
 
@@ -65,10 +64,10 @@ def get_leaf_num(din: Tuple[Int['w_sum'], Int['w_thr'], Uint['w_stddev']]):
 
 @gear
 def leaf_vals(din: Uint[1], *, feature_num):
-    rd_addr = feature_addr(feature_num=feature_num)
+    rd_addr = rng_cnt(feature_num=feature_num)
 
-    leaf0 = rom(rd_addr, data=leafVal0_l, dtype=Int[w_leafVal])
-    leaf1 = rom(rd_addr, data=leafVal1_l, dtype=Int[w_leafVal])
+    leaf0 = rom(rd_addr[0], data=leafVal0_l, dtype=Int[w_leafVal])
+    leaf1 = rom(rd_addr[0], data=leafVal1_l, dtype=Int[w_leafVal])
 
     sync = ccat(din, leaf0, leaf1)
     dout = mux_valve(sync[0], sync[1], sync[2]) | union_collapse
@@ -77,28 +76,14 @@ def leaf_vals(din: Uint[1], *, feature_num):
 
 @gear
 def get_stage_res(din: Int['w_din'], *, stage_num):
-    rd_addr = feature_addr(feature_num=stage_num)
-    # stage_threshold = stageThreshold_mem(rd_addr, w_data=11, depth=stage_num)
-    stage_threshold = rom(rd_addr, data=stageThreshold_l, dtype=Int[w_stage_thresh])
+    rd_addr = rng_cnt(feature_num=stage_num)
+    stage_threshold = rom(rd_addr[0], data=stageThreshold_l, dtype=Int[w_stage_thresh])
 
     sync = ccat(din, stage_threshold)
 
     dout = lt(sync[1], sync[0])
 
     return dout
-
-# @gear
-# def add_stage_eot(din: Int['w_leaf']):
-#     stage_cnt = feature_addr(feature_num=25)
-#     feature_num_in_stage = featureCount_mem(
-#         stage_cnt, w_data=8, depth=25)
-
-#     feature_cnt = ccat(0, feature_num_in_stage, 1) | rng
-#     feature_cnt = feature_cnt | cart_sync_with(feature_num_in_stage)
-
-#     dout = ccat(din, feature_cnt[1]) | Queue[din.dtype, 1]
-
-#     return dout
 
 @gear
 def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
@@ -119,9 +104,9 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
         rect.append(rect_tmp)
     rect_sum = rect[0] + rect[1] + rect[2]
 
-    feat_thr_addr = feature_addr(feature_num=feature_num)
+    feat_thr_addr = rng_cnt(feature_num=feature_num)
     feature_threshold = rom(
-        feat_thr_addr, data=featureThresholds_l, dtype=Int[w_feat_thresh])
+        feat_thr_addr[0], data=featureThresholds_l, dtype=Int[w_feat_thresh])
 
     stddev = stddev | cart_sync_with(
         ccat(rect_sum, 0) | Queue[rect_sum.dtype, 1])
