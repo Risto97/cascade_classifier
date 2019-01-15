@@ -33,8 +33,13 @@ def rng_cnt(*, cnt_num):
     return cnt
 
 @gear
-def feature_addr(*, feature_num, stage_num):
-    stage_counter = rng_cnt(cnt_num=stage_num)
+def stage_counter(*, stage_num):
+    stage_cnt = rng_cnt(cnt_num=stage_num)
+
+    return stage_cnt
+
+@gear
+def feature_addr(stage_counter: Queue[Uint['w_stage_addr'], 1], *, feature_num):
     feature_num_in_stage = stage_counter[0] | rom(data=stages_cnt_l, dtype=Uint[w_stage_cnt])
 
     cnt_end, cnt_start = feature_num_in_stage | Tuple[Uint[w_stage_cnt/2], Uint[w_stage_cnt/2]]

@@ -9,7 +9,7 @@ from stddev import stddev
 from frame_buffer import frame_buffer
 from classifier import classifier
 from features import features
-from addr_utils import feature_addr
+from addr_utils import feature_addr, stage_counter
 
 from pygears.sim import sim
 from pygears.sim.modules import drv
@@ -17,13 +17,13 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-from pygears.common import flatten, shred
+from pygears.common import flatten, shred, cart, fmap
 
+from gears.accum import accum_on_eot
 
 from image import loadImage
 
 import math
-
 
 img = loadImage("../datasets/rtl.pgm")
 img_size = img.shape
@@ -38,6 +38,7 @@ seq = [img.flatten()]
 
 w_rect_data = 20
 w_weight_data = 3
+
 
 @gear
 def cascade_classifier(
@@ -61,21 +62,26 @@ def cascade_classifier(
 
     stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
 
-    rd_addr_feat = feature_addr(feature_num=feature_num, stage_num=stage_num)
+    stage_cnt = stage_counter(stage_num=stage_num)
+    rd_addr_feat = feature_addr(stage_counter=stage_cnt, feature_num=feature_num)
     rect_addr = features(
         rd_addr_feat,
         feature_num=feature_num,
         feature_size=frame_size,
         w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data) | shred
+        w_weight_data=w_weight_data)
 
-    # fb_rd = frame_buffer(ii_s | flatten, rect_addr, frame_size=frame_size)
+    fb_rd = frame_buffer(ii_s | flatten, rect_addr, frame_size=frame_size)
 
-    # dout = classifier(fb_data=fb_rd, stddev=stddev_s, feature_num=feature_num, stage_num=stage_num)
+    class_res = classifier(
+        fb_data=fb_rd,
+        feat_addr=rd_addr_feat,
+        stage_addr=stage_cnt,
+        stddev=stddev_s,
+        feature_num=feature_num,
+        stage_num=stage_num)
 
-    # dout = rect_addr
-    # dout = rd_addr_feat
-    return stddev_s
+    return class_res
 
 
 if __name__ == "__main__":
@@ -93,7 +99,6 @@ if __name__ == "__main__":
 
     cascade_classifier(
         din=drv(t=din_t, seq=seq),
-        # rd_addr=drv(t=addr_t, seq=rd_seq),
         img_size=img_size,
         frame_size=frame_size,
         feature_num=feature_num,

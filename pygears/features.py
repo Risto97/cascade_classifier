@@ -7,12 +7,14 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-from roms import rects_mem
+from rects_data import rects_mem
 from pygears.cookbook.rng import rng
 from pygears.cookbook.priority_mux import priority_mux
 from pygears.common import union_collapse, cart_sync_with, quenvelope
 
 from pygears.common import ccat, czip, shred, zip_sync, fmap, cart
+
+from gears.czip_alt import czip_alt3
 
 import math
 
@@ -34,7 +36,7 @@ def features(rd_addr: Queue[Uint['w_addr'], 2], *, feature_num, feature_size,
         features_data.append(feature)
 
     feature_data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[w_weight_data]])
-    features_zip = czip(*features_data) | Queue[Array[feature_data_t.dtype, 3], 1]
+    features_zip = czip_alt3(*features_data) | Queue[Array[feature_data_t.dtype, 3], 1]
 
     sync = cart( rd_addr[1] , features_zip)
 
