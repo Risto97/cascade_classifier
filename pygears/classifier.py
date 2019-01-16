@@ -107,6 +107,7 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
         rect_tmp = ccat(
             fb_data[0][i],
             fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum
+        rect_tmp = rect_tmp * 4096
         rect.append(rect_tmp)
     rect_sum = rect[0] + rect[1] + rect[2]
 
