@@ -1,4 +1,4 @@
-from pygears import gear
+from pygears import gear, Intf
 from pygears.typing import Queue, Uint
 
 from ii_gen import ii_gen
@@ -17,7 +17,7 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-from pygears.common import flatten, shred, cart, fmap
+from pygears.common import flatten, shred, cart, fmap, dreg
 
 from gears.accum import accum_on_eot
 
@@ -25,7 +25,7 @@ from image import loadImage
 
 import math
 
-img = loadImage("../datasets/rtl.pgm")
+img = loadImage("../datasets/rtl2.jpg")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
@@ -62,8 +62,10 @@ def cascade_classifier(
 
     stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
 
-    stage_cnt = stage_counter(stage_num=stage_num)
-    rd_addr_feat = feature_addr(stage_counter=stage_cnt, feature_num=feature_num)
+    trig = Intf(Uint[1])
+    stage_cnt = stage_counter(rst_in=trig, stage_num=stage_num)
+    rd_addr_feat = feature_addr(
+        stage_counter=stage_cnt, rst_in=trig | dreg | dreg | dreg, feature_num=feature_num)
     rect_addr = features(
         rd_addr_feat,
         feature_num=feature_num,
@@ -71,7 +73,8 @@ def cascade_classifier(
         w_rect_data=w_rect_data,
         w_weight_data=w_weight_data)
 
-    fb_rd = frame_buffer(ii_s | flatten, rect_addr, frame_size=frame_size)
+    fb_rd = frame_buffer(
+        ii_s | flatten, rect_addr, trig=trig, frame_size=frame_size)
 
     class_res = classifier(
         fb_data=fb_rd,
@@ -80,6 +83,8 @@ def cascade_classifier(
         stddev=stddev_s,
         feature_num=feature_num,
         stage_num=stage_num)
+
+    trig |= class_res[0]
 
     return class_res
 

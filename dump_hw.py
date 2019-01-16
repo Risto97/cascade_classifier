@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     cascade = createCascade(doc)
 
-    img_fn = 'datasets/rtl.pgm'
+    img_fn = 'datasets/rtl2.jpg'
     # img_fn = 'datasets/proba.pgm'
     img = ImageClass()
     img.loadImage(img_fn)
@@ -78,12 +78,12 @@ if __name__ == "__main__":
     cascade.dumpRectVerilogROM("rtl/top/rom/")
     cascade.dumpStageVerilogROM("rtl/top/rom/")
 
-    pygears = 1
-    if pygears:
-        cascade.dumpFeatureVerilogROM("pygears/gears/svlib/roms/")
-        cascade.dumpRectVerilogROM("pygears/gears/svlib/roms/")
-        cascade.dumpStageVerilogROM("pygears/gears/svlib/roms/")
-        cascade.dumpFeatureCountVerilogROM("pygears/gears/svlib/roms/")
+    # pygears = 1
+    # if pygears:
+        # cascade.dumpFeatureVerilogROM("pygears/gears/svlib/roms/")
+        # cascade.dumpRectVerilogROM("pygears/gears/svlib/roms/")
+        # cascade.dumpStageVerilogROM("pygears/gears/svlib/roms/")
+        # cascade.dumpFeatureCountVerilogROM("pygears/gears/svlib/roms/")
 
 
     pass
