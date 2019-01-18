@@ -1,11 +1,15 @@
 from pygears import gear, Intf
-from pygears.typing import Array, Int, Uint, Queue, Tuple, Int
+from pygears.typing import Array, Int, Uint, Queue, Tuple, Int, Unit
 
 from pygears.cookbook import rng
 from pygears.common import cart_sync_with, ccat, fmap
 from pygears.common import lt, mux_valve, union_collapse
-from pygears.common import rom
+from pygears.common import rom, dreg
 from pygears.common import flatten
+from pygears.common import local_rst
+
+from pygears.cookbook import replicate
+
 
 from addr_utils import rng_cnt
 from gears.accum import accum_on_eot
@@ -95,12 +99,16 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
                feat_addr: Queue[Uint['w_addr_feat'], 2],
                stage_addr: Queue[Uint['w_stage_addr'], 1],
                stddev: Uint['w_stddev'],
+               rst_in: Unit,
                *,
                w_ii=b'w_ii',
                w_weight=b'w_weight',
                feature_num,
                stage_num):
+    rst_in | local_rst
 
+    stddev_repl = replicate(ccat(2913, stddev | dreg))
+    stddev_repl = stddev_repl[0]
     rect_data_t = Intf(Tuple[Uint[w_ii], Uint[1], Int[w_weight]])
     rect = []
     for i in range(3):
@@ -114,9 +122,9 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     feature_threshold = rom(
         feat_addr[0], data=featureThresholds_l, dtype=Int[w_feat_thresh])
 
-    stddev = stddev | cart_sync_with(
+    stddev_repl = stddev_repl | cart_sync_with(
         ccat(rect_sum, 0) | Queue[rect_sum.dtype, 1])
-    res = ccat(rect_sum, feature_threshold, stddev)
+    res = ccat(rect_sum, feature_threshold, stddev_repl)
 
     leaf_num = res | get_leaf_num
     leaf_val = leaf_vals(feat_addr=feat_addr, din=leaf_num)

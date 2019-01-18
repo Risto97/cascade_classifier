@@ -1,12 +1,12 @@
 from pygears import gear
-from pygears.typing import Queue, Uint, Array, Int, Tuple
+from pygears.typing import Queue, Uint, Array, Int, Tuple, Unit
 
 from pygears.cookbook import sdp
 from pygears.cookbook.rng import rng
 from pygears.common import ccat, dreg, flatten, decoupler
+from pygears.common import local_rst
 
-# from gears.queue_ops import queue_one_by_one
-from gears.queue_ops import queue_one_by_one_w_trig
+from gears.queue_ops import queue_one_by_one
 
 import math
 
@@ -15,14 +15,16 @@ import math
 def frame_buffer(din: Queue[Uint['w_din'], 1],
                  # rd_addr: Queue[Uint['w_addr'], 2],
                  rd_addr: Queue[Array[Tuple[Uint['w_rect'], Uint[1], Int['w_weight']], 3], 3],
-                 trig: Uint[1],
+                 rst_in: Unit,
                  *,
                  frame_size=(25, 25)):
     ##########Parameters###################
     ram_size = frame_size[0] * frame_size[1]
     w_addr = math.ceil(math.log(ram_size, 2))
     #######################################
-    din_i, rd_addr_sdp = queue_one_by_one_w_trig(din0=din, din1=(rd_addr | flatten(lvl=2)), trig_in=trig)
+    rst_in | local_rst
+
+    din_i, rd_addr_sdp = queue_one_by_one(din, rd_addr | flatten(lvl=2))
 
     cfg_rng = ccat(0, Uint[w_addr](ram_size), 1)
     wr_addr = cfg_rng | rng

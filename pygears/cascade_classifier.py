@@ -1,5 +1,5 @@
 from pygears import gear, Intf
-from pygears.typing import Queue, Uint
+from pygears.typing import Queue, Uint, Unit, Int
 
 from ii_gen import ii_gen
 from ii_gen import sii_gen
@@ -17,9 +17,11 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-from pygears.common import flatten, shred, cart, fmap, dreg
+from pygears.common import flatten, shred, cart, fmap, neg
+from pygears.cookbook import replicate
 
 from gears.accum import accum_on_eot
+from gears.yield_on_one import yield_on_one
 
 from image import loadImage
 
@@ -38,8 +40,6 @@ seq = [img.flatten()]
 
 w_rect_data = 20
 w_weight_data = 3
-
-
 @gear
 def cascade_classifier(
         din: Queue[Uint['w_din'], 1],
@@ -62,10 +62,10 @@ def cascade_classifier(
 
     stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
 
-    trig = Intf(Uint[1])
-    stage_cnt = stage_counter(rst_in=trig, stage_num=stage_num)
-    rd_addr_feat = feature_addr(
-        stage_counter=stage_cnt, rst_in=trig | dreg | dreg | dreg, feature_num=feature_num)
+    rst_local = Intf(Unit)
+
+    stage_cnt = stage_counter(rst_in=rst_local, stage_num=stage_num)
+    rd_addr_feat = feature_addr(rst_in=rst_local, stage_counter=stage_cnt, feature_num=feature_num)
     rect_addr = features(
         rd_addr_feat,
         feature_num=feature_num,
@@ -73,10 +73,10 @@ def cascade_classifier(
         w_rect_data=w_rect_data,
         w_weight_data=w_weight_data)
 
-    fb_rd = frame_buffer(
-        ii_s | flatten, rect_addr, trig=trig, frame_size=frame_size)
+    fb_rd = frame_buffer(ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size)
 
     class_res = classifier(
+        rst_in=rst_local,
         fb_data=fb_rd,
         feat_addr=rd_addr_feat,
         stage_addr=stage_cnt,
@@ -84,8 +84,7 @@ def cascade_classifier(
         feature_num=feature_num,
         stage_num=stage_num)
 
-    trig |= class_res[0]
-
+    rst_local |= neg(class_res[0]) | yield_on_one
     return class_res
 
 
@@ -108,7 +107,7 @@ if __name__ == "__main__":
         frame_size=frame_size,
         feature_num=feature_num,
         stage_num=stage_num,
-        sim_cls=SimVerilated) | shred
+        sim_cls=partial(SimVerilated, timeout=1000000)) | shred
 
     # sim(outdir='build', extens=[VCD])
     sim(outdir='build',
