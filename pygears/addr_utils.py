@@ -35,7 +35,9 @@ def rng_cnt(*, cnt_num):
     return cnt
 
 @gear
-def stage_counter(rst_in: Unit, *, stage_num):
+def stage_counter(
+        rst_in: Unit,
+        *, stage_num):
     rst_in | local_rst
     stage_cnt = rng_cnt(cnt_num=stage_num)
 

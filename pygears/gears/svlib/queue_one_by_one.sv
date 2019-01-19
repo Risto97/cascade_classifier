@@ -34,8 +34,23 @@ module queue_one_by_one
    assign dout0.data = dout0_s;
    assign dout1.data = dout1_s;
 
-   logic                active_output_reg;
+   logic                active_output_reg, active_output_next;
+   logic                handshake0;
+   logic                handshake1;
    logic                eotshake;
+
+   logic                dout1_valid_reg;
+   assign dout1.valid = dout1_valid_reg;
+
+   // assign din0.ready = dout0.ready;
+   // assign din1.ready = dout1.ready;
+   assign handshake0 = din0.valid && dout0.ready;
+   assign handshake1 = din1.valid && dout1.ready;
+
+   // assign eotshake = (din0_s.eot == 1 && handshake0) ? 1 : 0;
+
+   // assign dout0.valid = active_output_reg == 1 ? din0.valid : 0;
+   // assign dout1.valid = active_output_reg == 0 ? 0 : din1.valid;
 
    always_comb begin
       eotshake = 0;
@@ -45,17 +60,15 @@ module queue_one_by_one
       din1.ready = 0;
       case(active_output_reg)
         0: begin
-           din0.ready = dout0.ready;
-           dout0_s = din0_s;
            dout0.valid = din0.valid;
-           if(din0_s.eot && din0.valid)
+           din0.ready = dout0.ready;
+           if(handshake0 && &din0_s.eot)
              eotshake = 1;
         end
         1: begin
-           din1.ready = dout1.ready;
-           dout1_s = din1_s;
            dout1.valid = din1.valid;
-           if(din1_s.eot && din1.valid)
+           din1.ready = dout1.ready;
+           if(handshake1 && &din1_s.eot)
              eotshake = 1;
         end
       endcase

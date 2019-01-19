@@ -17,7 +17,7 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
-from pygears.common import flatten, shred, cart, fmap, neg
+from pygears.common import flatten, shred, cart, fmap, invert, dreg
 from pygears.cookbook import replicate
 
 from gears.accum import accum_on_eot
@@ -63,20 +63,25 @@ def cascade_classifier(
     stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
 
     rst_local = Intf(Unit)
+    rst_local_delayed = Intf(Unit)
 
-    stage_cnt = stage_counter(rst_in=rst_local, stage_num=stage_num)
-    rd_addr_feat = feature_addr(rst_in=rst_local, stage_counter=stage_cnt, feature_num=feature_num)
+    stage_cnt = stage_counter(rst_in=rst_local_delayed,
+                              stage_num=stage_num)
+    rd_addr_feat = feature_addr(rst_in=rst_local_delayed,
+                                stage_counter=stage_cnt, feature_num=feature_num)
     rect_addr = features(
         rd_addr_feat,
+        rst_in=rst_local_delayed,
         feature_num=feature_num,
         feature_size=frame_size,
         w_rect_data=w_rect_data,
         w_weight_data=w_weight_data)
 
-    fb_rd = frame_buffer(ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size)
+    fb_rd = frame_buffer(ii_s | flatten, rect_addr, rst_in=rst_local,
+                         frame_size=frame_size)
 
     class_res = classifier(
-        rst_in=rst_local,
+        rst_in=rst_local_delayed,
         fb_data=fb_rd,
         feat_addr=rd_addr_feat,
         stage_addr=stage_cnt,
@@ -84,12 +89,14 @@ def cascade_classifier(
         feature_num=feature_num,
         stage_num=stage_num)
 
-    rst_local |= neg(class_res[0]) | yield_on_one
+    rst_local |= invert(class_res[0]) | yield_on_one
+    rst_local_delayed |= rst_local | dreg | dreg | dreg | dreg
     return class_res
 
 
 if __name__ == "__main__":
 
+    # from pygears.svgen import svgen
     # from pygears.sim.extens.vcd import VCD
     rd_seq = []
     for i in range(5):
@@ -109,6 +116,7 @@ if __name__ == "__main__":
         stage_num=stage_num,
         sim_cls=partial(SimVerilated, timeout=1000000)) | shred
 
+    # svgen('/cascade_classifier', outdir='build/fir', wrapper=True)
     # sim(outdir='build', extens=[VCD])
     sim(outdir='build',
         check_activity=True,

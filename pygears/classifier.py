@@ -129,7 +129,7 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     leaf_num = res | get_leaf_num
     leaf_val = leaf_vals(feat_addr=feat_addr, din=leaf_num)
 
-    stage_eot = feat_addr[1][0]
+    stage_eot = feat_addr[1][0] | dreg
     leaf_val = ccat(leaf_val, stage_eot) | Queue[leaf_val.dtype, 1]
 
     accum_stage = leaf_val | accum_on_eot(add_num=256)
@@ -137,6 +137,6 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     stage_res = accum_stage | get_stage_res(
         stage_addr=stage_addr, stage_num=stage_num)
 
-    stage_res = ccat(stage_res, stage_addr[1]) | Queue[stage_res.dtype, 1]
+    stage_res = ccat(stage_res, stage_addr[1] | dreg | dreg) | Queue[stage_res.dtype, 1]
 
     return stage_res

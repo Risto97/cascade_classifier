@@ -8,7 +8,7 @@ from pygears_view import PyGearsView
 from functools import partial
 
 from pygears.common import ccat, shred, dreg, decoupler, fifo, zip_sync, cart
-from pygears.common import serialize
+from pygears.common.serialize import serialize, active_serialize
 from pygears.common import rom
 from pygears.cookbook import rng
 from gears.serialize_queue import serialize_queue
@@ -56,7 +56,9 @@ def calc_rect_coords(
     C = ((A + width + height * feature_size[1]) - width) | Uint[w_rect]
 
     sign = ccat(1, 0, 0, 1) | Array[Uint[1], 4] | serialize
-    rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4] | serialize_queue
+    # rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4] | serialize_queue
+    rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4] # | active_serialize
+    rect_coord = ccat(rect_coord, 4) | Tuple[Array[Uint[w_rect], 4], Uint[3]] | active_serialize
 
     return ccat(rect_coord[0], sign, rect_coord[1]) | \
         Queue[Tuple[Uint[w_rect], Uint[1]], 1]
