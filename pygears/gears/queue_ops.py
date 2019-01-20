@@ -58,9 +58,9 @@ def queue_head_tail(din: Queue[Uint['w_data'], 2], *, w_data=b'w_data'):
     return dout
 
 
-@gear
-def queue_one_by_one(din0: 'w_din0', din1: 'w_din1') -> ('w_din0', 'w_din1'):
-    pass
+# @gear
+# def queue_one_by_one(din0: 'w_din0', din1: 'w_din1') -> ('w_din0', 'w_din1'):
+#     pass
 
 @gear
 def queue_one_by_one_w_trig(din0: 'w_din0', din1: 'w_din1', trig_in: Uint[1]) -> ('w_din0', 'w_din1'):

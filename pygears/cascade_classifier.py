@@ -27,7 +27,7 @@ from image import loadImage
 
 import math
 
-img = loadImage("../datasets/rtl2.jpg")
+img = loadImage("../datasets/rtl5.jpg")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
@@ -52,9 +52,8 @@ def cascade_classifier(
     ram_size = img_size[0] * img_size[1]
     w_addr_img = math.ceil(math.log(ram_size, 2))
 
-    rd_addr_s = rd_addrgen(
-        img_size=img_size, frame_size=frame_size) | addr_trans(
-            img_size=img_size) | Queue[Uint[w_addr_img], 3]
+    rd_addr_s = rd_addrgen(frame_size=frame_size) | \
+        addr_trans(img_size=img_size) | Queue[Uint[w_addr_img], 3]
     img_s = img_ram(din, rd_addr_s, img_size=img_size)
 
     ii_s = img_s | ii_gen(frame_size=frame_size)
@@ -89,10 +88,10 @@ def cascade_classifier(
         feature_num=feature_num,
         stage_num=stage_num)
 
-    rst_local |= invert(class_res[0]) | yield_on_one
+    rst_local |= class_res | yield_on_one
     rst_local_delayed |= rst_local | dreg | dreg | dreg | dreg
-    return class_res
 
+    return class_res
 
 if __name__ == "__main__":
 

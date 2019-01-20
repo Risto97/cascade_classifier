@@ -137,6 +137,6 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     stage_res = accum_stage | get_stage_res(
         stage_addr=stage_addr, stage_num=stage_num)
 
-    stage_res = ccat(stage_res, stage_addr[1] | dreg | dreg) | Queue[stage_res.dtype, 1]
+    stage_res = ccat(stage_res | dreg, stage_addr[1]) | Queue[stage_res.dtype, 1]
 
     return stage_res

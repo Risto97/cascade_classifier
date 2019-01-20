@@ -3,10 +3,11 @@ from pygears.typing import Queue, Uint, Array, Int, Tuple, Unit
 
 from pygears.cookbook import sdp
 from pygears.cookbook.rng import rng
+from pygears.cookbook import release_after_eot
 from pygears.common import ccat, dreg, flatten, decoupler
 from pygears.common import local_rst
 
-from gears.queue_ops import queue_one_by_one
+from gears.queue_one_by_one import queue_one_by_one
 
 import math
 
