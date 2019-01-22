@@ -12,6 +12,8 @@ from pygears.sim.modules.verilator import SimVerilated
 from pygears_view import PyGearsView
 from functools import partial
 
+from gears.queue_one_by_one import queue_one_by_one
+
 from image import loadImage
 
 import math
@@ -19,7 +21,7 @@ import math
 
 @gear
 def img_ram(din: Queue[Uint['w_data'], 1],
-            rd_addr: Queue[Uint['w_addr'], 3],
+            rd_addr: Queue[Uint['w_addr'], 4],
             *,
             img_size=(240, 320)):
     ##########Parameters###################
@@ -32,9 +34,8 @@ def img_ram(din: Queue[Uint['w_data'], 1],
         const(tout=Uint[1], val=1))
     wr_addr = cfg_rng | rng
 
+    din, rd_addr_sdp = queue_one_by_one(din, rd_addr)
     wr_sdp = ccat(wr_addr[0], din[0])
-    rd_addr_sdp, pred = release_after_eot(rd_addr, din)
-    pred | shred
 
     rd_data = sdp(wr_sdp, rd_addr_sdp[0], depth=ram_size)
 
