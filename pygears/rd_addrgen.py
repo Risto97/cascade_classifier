@@ -21,9 +21,8 @@ img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)
 
-w_boundary = max(math.ceil(math.log(max(scale_params['boundary_y']), 2)), math.ceil(math.log(max(scale_params['boundary_x']), 2)))
+w_boundary = max(math.ceil(math.log(max(scale_params['boundary_y']), 2)), math.ceil(math.log(max(scale_params['boundary_x']), 2))) + 1
 w_ratio = max(math.ceil(math.log(max(scale_params['y_ratio']), 2)), math.ceil(math.log(max(scale_params['x_ratio']), 2)))
-print(w_ratio)
 
 print(scale_params)
 #############################
@@ -39,10 +38,10 @@ def scale_counter():
 def boundaries(scale_counter: Queue[Uint['w_scale'], 1]):
     bound_y_param = []
     for val in scale_params['boundary_y']:
-        bound_y_param.append(Uint[w_boundary](val))
+        bound_y_param.append(Uint[w_boundary](val+1))
     bound_x_param = []
     for val in scale_params['boundary_x']:
-        bound_x_param.append(Uint[w_boundary](val))
+        bound_x_param.append(Uint[w_boundary](val+1))
 
     boundary_y = mux_valve(scale_counter, *bound_y_param) | union_collapse
     boundary_x = mux_valve(scale_counter, *bound_x_param) | union_collapse
@@ -137,17 +136,32 @@ def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4],
 
     return ccat(addr_abs, din[1]) | Queue[addr_abs.dtype, 4]
 
+@gear
+def scale_addr(din: Tuple[Tuple['ratio_y', 'ratio_x'], Tuple['hop_y', 'hop_x']]):
+
+    scaled_y = (din[1][0] * din[0][0]) >> 16
+    scaled_x = (din[1][1] * din[0][1]) >> 16
+
+    scaled_y = scaled_y | Uint[len(scaled_y.dtype) - 16]
+    scaled_x = scaled_x | Uint[len(scaled_x.dtype) - 16]
+    dout = ccat(scaled_y, scaled_x)
+
+    return dout
 
 @gear
 def rd_addrgen(*, frame_size=(25, 25)):
     scale = scale_counter()
     ratio = scale_ratio(scale)
     boundary = boundaries(scale)
-    hop_out = hopper()
 
-    sweep_out = boundary | hopper | sweeper(scale_ratio=ratio, frame_size=frame_size)
+    hop_out = boundary | hopper
+    sweep_out = hop_out | sweeper(scale_ratio=ratio, frame_size=frame_size)
 
-    return sweep_out
+    ratio = ratio | cart_sync_with(hop_out)
+    scaled_addr = scale_addr(ccat(ratio[0], hop_out[0]))
+
+
+    return sweep_out, scaled_addr
 
 
 if __name__ == "__main__":
