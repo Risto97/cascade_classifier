@@ -38,18 +38,14 @@ async def queue_edges(din: Queue[Uint['w_data'], 2], *,
 @gear(svgen={'compile': True})
 async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *,
                            w_data=b'w_data') -> b'Queue[Uint[w_data], 2]':
-    first_q_done = 0
-    first_q_active = 1
+    output_active = 1
     async for (data, eot) in din:
-        if first_q_done == 1 and (eot == 0 or eot == 1):
-            first_q_active = 0
-        elif eot == 2:
-            first_q_active = 1
+        if eot == 1:
+            output_active = 0
+
+        if output_active == 1 or (eot == 2 or eot == 3):
             yield (data, eot)
 
-        if first_q_active == 1:
-            first_q_done = 1
-            yield (data, eot)
 
 
 @gear
@@ -69,41 +65,41 @@ def queue_one_by_one_w_trig(din0: 'w_din0', din1: 'w_din1', trig_in: Uint[1]) ->
 if __name__ == "__main__":
     from pygears.common import shred
 
-    din_t = Queue[Uint[8], 1]
-    seq0 = []
-    for i in range(5):
-        seq_x = []
-        for x in range(5):
-            seq_x.append(x)
-        seq0.append(seq_x)
+    # din_t = Queue[Uint[8], 1]
+    # seq0 = []
+    # for i in range(5):
+    #     seq_x = []
+    #     for x in range(5):
+    #         seq_x.append(x)
+    #     seq0.append(seq_x)
 
-    seq1 = []
-    for i in range(5):
-        seq_x = []
-        for x in range(5):
-            seq_x.append(x)
-        seq1.append(seq_x)
+    # seq1 = []
+    # for i in range(5):
+    #     seq_x = []
+    #     for x in range(5):
+    #         seq_x.append(x)
+    #     seq1.append(seq_x)
 
-    asd0, asd1 = queue_one_by_one(
-        din0=drv(t=din_t,seq=seq0),
-        din1=drv(t=din_t,seq=seq1),
-        sim_cls=SimVerilated)
+    # asd0, asd1 = queue_one_by_one(
+    #     din0=drv(t=din_t,seq=seq0),
+    #     din1=drv(t=din_t,seq=seq1),
+    #     sim_cls=SimVerilated)
 
-    asd0 | shred
-    asd1 | shred
+    # asd0 | shred
+    # asd1 | shred
 
-    # seq = []
-    # for i in range(3):
-    #     seq_y = []
-    #     for y in range(5):
-    #         seq_x = []
-    #         for x in range(5):
-    #             seq_x.append(x)
-    #         seq_y.append(seq_x)
-    #     seq.append(seq_y)
+    seq = []
+    for i in range(3):
+        seq_y = []
+        for y in range(5):
+            seq_x = []
+            for x in range(5):
+                seq_x.append(x)
+            seq_y.append(seq_x)
+        seq.append(seq_y)
 
-    # queue_head_tail(
-    #     din=drv(t=Queue[Uint[8], 2], seq=seq), sim_cls=SimVerilated) | shred
+    queue_head_tail(
+        din=drv(t=Queue[Uint[8], 2], seq=seq), sim_cls=SimVerilated) | shred
 
     sim(outdir='build',
         check_activity=True,
