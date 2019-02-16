@@ -167,7 +167,10 @@ def rd_addrgen(*, frame_size=(25, 25)):
 if __name__ == "__main__":
     frame_size = (25, 25)
     from pygears.sim.extens.vcd import VCD
-    rd_addrgen(frame_size=frame_size, sim_cls=SimVerilated) | shred
+    sweep_addr, scaled_addr = rd_addrgen(frame_size=frame_size, sim_cls=SimVerilated)
+
+    sweep_addr | shred
+    scaled_addr | shred
 
     # y = wrap_test(sim_cls=SimVerilated)
     # y | shred
