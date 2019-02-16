@@ -2,7 +2,8 @@ from pygears import gear, Intf
 from pygears.typing import Array, Int, Uint, Queue, Tuple, Int, Unit
 
 from pygears.cookbook import rng
-from pygears.common import cart_sync_with, ccat, fmap
+from pygears.common import cart_sync_with, ccat, fmap, neg, shred
+from pygears.common.mux import mux_valve
 from pygears.common import lt, mux_valve, union_collapse
 from pygears.common import rom, dreg
 from pygears.common import flatten
@@ -10,9 +11,10 @@ from pygears.common import local_rst
 
 from pygears.cookbook import replicate
 
-
 from addr_utils import rng_cnt
 from gears.accum import accum_on_eot
+from gears.accum import accum
+from gears.queue_ops import last_data
 
 import math
 
@@ -38,23 +40,21 @@ stageThreshold_l, w_stage_thresh = cascade_model.getStageThreshold()
 #################
 
 
-@gear(svgen={'compile': True})
-async def weighted_sum(
-        din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1],
-        *,
-        w_ii=b'w_ii',
-        w_weight=b'w_weight',
-        w_out=b'math.ceil(math.log(2**w_ii*4*2**w_weight, 2))'
-) -> b'Int[w_out]':
-    accum = Int[w_out](0)
-    async for (data, eot) in din:
-        if data[1] == 0:
-            accum = accum - data[0]
-        elif data[1] == 1:
-            accum = accum + data[0]
+@gear
+def weighted_sum(din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1]):
+    data_neg = din[0][0] | neg
+    data = din[0][0] | data_neg.dtype
 
-        if eot == 1:
-            yield data[2] * (accum + data[0])
+    signed_data = mux_valve(din[0][1], data_neg, data) | union_collapse
+    signed_data = signed_data * din[0][2]
+    weighted_data = ccat(signed_data, din[1])
+    weighted_data = weighted_data | Queue[weighted_data.dtype[0], 1]
+
+    summed_data = weighted_data | accum(add_num=4)
+    summed_data = summed_data | Queue[Int[len(summed_data.dtype[0]
+                                              )], 1] | last_data
+
+    return summed_data
 
 
 @gear
@@ -94,8 +94,8 @@ def get_stage_res(stage_addr: Queue[Uint['w_stage_addr'], 1],
 
 
 @gear
-def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
-        'w_weight']]], 3],
+def classifier(fb_data: Queue[Array[
+        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']]], 3],
                feat_addr: Queue[Uint['w_addr_feat'], 2],
                stage_addr: Queue[Uint['w_stage_addr'], 1],
                stddev: Uint['w_stddev'],
@@ -137,6 +137,31 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     stage_res = accum_stage | get_stage_res(
         stage_addr=stage_addr, stage_num=stage_num)
 
-    stage_res = ccat(stage_res | dreg, stage_addr[1]) | Queue[stage_res.dtype, 1]
+    stage_res = ccat(stage_res | dreg,
+                     stage_addr[1]) | Queue[stage_res.dtype, 1]
 
     return stage_res
+
+
+if __name__ == "__main__":
+    from pygears.sim import sim
+    from pygears.sim.modules import drv
+    from pygears.sim.modules.verilator import SimVerilated
+    from gearbox import Gearbox
+    from functools import partial
+
+    din_t = Queue[Tuple[Uint[19], Uint[1], Int[2]], 1]
+
+    seq = []
+    seq.append((805, 1, -1))
+    seq.append((36407, 0, -1))
+    seq.append((1273, 0, -1))
+    seq.append((45228, 1, -1))
+
+    seq = [seq] * 3
+
+    weighted_sum(din=drv(t=din_t, seq=seq), sim_cls=SimVerilated) | shred
+
+    sim(outdir='build',
+        check_activity=True,
+        extens=[partial(Gearbox, live=True, reload=True)])

@@ -1,5 +1,5 @@
 from pygears import gear
-from pygears.typing import Queue, Uint
+from pygears.typing import Queue, Uint, Int
 
 from pygears.sim import sim
 from pygears.sim.modules import drv
@@ -18,7 +18,7 @@ async def first_data(din: Queue[Uint['w_data'], 1]) -> b'Uint[w_data]':
 
 
 @gear(svgen={'compile': True})
-async def last_data(din: Queue[Uint['w_data'], 1]) -> b'Uint[w_data]':
+async def last_data(din: Queue[Int['w_data'], 1]) -> b'Int[w_data]':
     async for (data, eot) in din:
         if eot == 1:
             yield data
@@ -27,7 +27,7 @@ async def last_data(din: Queue[Uint['w_data'], 1]) -> b'Uint[w_data]':
 @gear(svgen={'compile': True})
 async def queue_edges(din: Queue[Uint['w_data'], 2], *,
                       w_data=b'w_data') -> b'Queue[Uint[w_data], 2]':
-    eot_s = 1
+    eot_s = Uint[2](1)
     async for (data, eot) in din:
         if eot_s == 1 or (eot == 1 or eot == 3):
             yield (data, eot)
@@ -38,7 +38,8 @@ async def queue_edges(din: Queue[Uint['w_data'], 2], *,
 @gear(svgen={'compile': True})
 async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *,
                            w_data=b'w_data') -> b'Queue[Uint[w_data], 2]':
-    output_active = 1
+    # output_active = Uint[1](1)
+    output_active = Uint[1](1)
     async for (data, eot) in din:
         if eot == 1:
             output_active = 0
