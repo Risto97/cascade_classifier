@@ -4,7 +4,7 @@ from pygears.typing import Queue, Uint
 from pygears.sim import sim
 from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
-from pygears_view import PyGearsView
+from gearbox import Gearbox
 from functools import partial
 
 from pygears.common import ccat, flatten, shred
@@ -47,4 +47,4 @@ if __name__ == "__main__":
 
     sim(outdir='build',
         check_activity=True,
-        extens=[partial(PyGearsView, live=True, reload=True)])
+        extens=[partial(Gearbox, live=True, reload=True)])
