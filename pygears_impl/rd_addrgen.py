@@ -16,7 +16,7 @@ import math
 from dump_hw import scaleParams
 from image import ImageClass
 ###### CHANGE  ##############
-img_fn = '../datasets/rtl7.jpg'
+img_fn = '../datasets/proba.pgm'
 img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)
@@ -160,6 +160,9 @@ def rd_addrgen(*, frame_size=(25, 25)):
     ratio = ratio | cart_sync_with(hop_out)
     scaled_addr = scale_addr(ccat(ratio[0], hop_out[0]))
 
+    ratio_sync = cart(scale, hop_out)
+    scaled_eot = (ratio_sync | flatten(lvl=2))[1]
+    scaled_addr = ccat(scaled_addr, scaled_eot) | Queue[scaled_addr.dtype, 1]
 
     return sweep_out, scaled_addr
 

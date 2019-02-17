@@ -27,7 +27,7 @@ from image import loadImage
 
 import math
 
-img = loadImage("../datasets/rtl7.jpg")
+img = loadImage("../datasets/proba.pgm")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
@@ -52,15 +52,16 @@ async def yield_zeros_and_eot(din: Queue['data_t', 1]) -> Uint[1]:
 
 
 @gear
-def send_result( addr: Tuple['y_scaled', 'x_scaled'],
+def send_result(addr: Queue[Tuple['y_scaled', 'x_scaled'], 1],
                 res: Queue[Uint[1], 1]):
 
     demux_ctrl = res | yield_zeros_and_eot
 
-    no_detect, detect = demux_by(demux_ctrl, addr)
+    no_detect, detect = demux_by(demux_ctrl, addr[0])
     no_detect | shred
 
-    return detect
+    interrupt = addr[1]
+    return detect, interrupt
 
 
 @gear
@@ -111,29 +112,36 @@ def cascade_classifier(
         feature_num=feature_num,
         stage_num=stage_num)
 
-    detected_addr = send_result(addr=scaled_addr,
-                                res=class_res)
+    detected_addr, interrupt = send_result(addr=scaled_addr, res=class_res)
 
     rst_local |= class_res | yield_on_one
     rst_local_delayed |= rst_local | dreg | dreg | dreg | dreg
 
-    return detected_addr
+    return detected_addr, interrupt
 
 
 if __name__ == "__main__":
-    # from pygears.svgen import svgen
-    # from pygears.sim.extens.vcd import VCD
 
-    cascade_classifier(
+    detected_addr, interrupt = cascade_classifier(
         din=drv(t=din_t, seq=seq),
         img_size=img_size,
         frame_size=frame_size,
         feature_num=feature_num,
         stage_num=stage_num,
-        sim_cls=partial(SimVerilated, timeout=1000000)) | shred
+        sim_cls=partial(SimVerilated, timeout=1000000))
 
-    # svgen('/cascade_classifier', outdir='build/cascade_svgen', wrapper=True)
+    detected_addr | shred
+    interrupt | shred
+
+    # from pygears.svgen import svgen
+    # from pygears.conf.registry import registry, bind
+    # bind('svgen/debug_intfs', [])
+    # svgen('/cascade_classifier', outdir='/tools/work/vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
+    # svgen('/cascade_classifier', outdir='build/cascade_classifier_pygears', wrapper=True)
+
+    # from pygears.sim.extens.vcd import VCD
     # sim(outdir='build', extens=[VCD])
+
     sim(outdir='build',
         check_activity=True,
         extens=[partial(Gearbox, live=True, reload=True)])
