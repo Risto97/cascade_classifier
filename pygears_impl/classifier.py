@@ -126,7 +126,7 @@ def classifier(fb_data: Queue[Array[
         ccat(rect_sum, 0) | Queue[rect_sum.dtype, 1])
     res = ccat(rect_sum, feature_threshold, stddev_repl)
 
-    leaf_num = res | get_leaf_num
+    leaf_num = res | get_leaf_num | dreg
     leaf_val = leaf_vals(feat_addr=feat_addr, din=leaf_num)
 
     stage_eot = feat_addr[1][0] | dreg

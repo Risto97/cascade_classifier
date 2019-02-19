@@ -6,7 +6,7 @@ from gearbox import Gearbox
 from functools import partial
 
 from pygears.typing import Tuple, Uint, Queue
-from pygears.common import cart, cart_sync_with, ccat, quenvelope, shred, mux, union_collapse, flatten,czip, cart
+from pygears.common import cart, cart_sync_with, ccat, quenvelope, shred, mux, union_collapse, flatten, czip, cart, dreg
 from pygears.common.mux import mux_zip
 from pygears.common.mux import mux_valve
 from pygears.cookbook.rng import rng
@@ -17,6 +17,7 @@ from dump_hw import scaleParams
 from image import ImageClass
 ###### CHANGE  ##############
 img_fn = '../datasets/proba.pgm'
+# img_fn = '../datasets/rtl7.jpg'
 img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)
@@ -155,7 +156,7 @@ def rd_addrgen(*, frame_size=(25, 25)):
     boundary = boundaries(scale)
 
     hop_out = boundary | hopper
-    sweep_out = hop_out | sweeper(scale_ratio=ratio, frame_size=frame_size)
+    sweep_out = hop_out | sweeper(scale_ratio=ratio, frame_size=frame_size) | dreg
 
     ratio = ratio | cart_sync_with(hop_out)
     scaled_addr = scale_addr(ccat(ratio[0], hop_out[0]))

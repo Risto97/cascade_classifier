@@ -38,7 +38,7 @@ def features(rd_addr: Queue[Uint['w_addr'], 2],
             w_rect_data=w_rect_data,
             w_weight_data=w_weight_data,
             feature_size=feature_size)
-        features_data.append(feature)
+        features_data.append(feature | dreg)
 
     feature_data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[w_weight_data]])
     features_zip = czip_alt3(*features_data) | Queue[Array[feature_data_t.dtype, 3], 1]

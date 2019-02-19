@@ -28,6 +28,7 @@ from image import loadImage
 import math
 
 img = loadImage("../datasets/proba.pgm")
+# img = loadImage("../datasets/rtl7.jpg")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
@@ -79,29 +80,29 @@ def cascade_classifier(
     rd_addr_s = rd_addr_s | addr_trans(img_size=img_size)
     img_s = img_ram(din, rd_addr_s, img_size=img_size)
 
-    ii_s = img_s | ii_gen(frame_size=frame_size)
-    sii_s = img_s | sii_gen(frame_size=frame_size)
+    ii_s = img_s | ii_gen(frame_size=frame_size) | dreg
+    sii_s = img_s | sii_gen(frame_size=frame_size) | dreg
 
     stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
 
     rst_local = Intf(Unit)
     rst_local_delayed = Intf(Unit)
 
-    stage_cnt = stage_counter(rst_in=rst_local_delayed, stage_num=stage_num)
+    stage_cnt = stage_counter(rst_in=rst_local_delayed, stage_num=stage_num) | dreg
     rd_addr_feat = feature_addr(
         rst_in=rst_local_delayed,
         stage_counter=stage_cnt,
-        feature_num=feature_num)
+        feature_num=feature_num) | dreg
     rect_addr = features(
         rd_addr_feat,
         rst_in=rst_local_delayed,
         feature_num=feature_num,
         feature_size=frame_size,
         w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data)
+        w_weight_data=w_weight_data) | dreg
 
     fb_rd = frame_buffer(
-        ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size)
+        ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size) | dreg
 
     class_res = classifier(
         rst_in=rst_local_delayed,
@@ -133,15 +134,14 @@ if __name__ == "__main__":
     detected_addr | shred
     interrupt | shred
 
-    # from pygears.svgen import svgen
-    # from pygears.conf.registry import registry, bind
-    # bind('svgen/debug_intfs', [])
-    # svgen('/cascade_classifier', outdir='/tools/work/vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
-    # svgen('/cascade_classifier', outdir='build/cascade_classifier_pygears', wrapper=True)
+    from pygears.svgen import svgen
+    from pygears.conf.registry import registry, bind
+    bind('svgen/debug_intfs', [])
+    svgen('/cascade_classifier', outdir='/tools/home/work/cascade_classifier_vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
 
     # from pygears.sim.extens.vcd import VCD
     # sim(outdir='build', extens=[VCD])
 
-    sim(outdir='build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+    # sim(outdir='build',
+    #     check_activity=True,
+    #     extens=[partial(Gearbox, live=True, reload=True)])
