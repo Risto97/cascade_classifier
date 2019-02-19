@@ -126,7 +126,7 @@ module fifo2
 		   end
 
 
-	 wire ready = out_ready | ~full;
+	 wire ready = ~full;
 	 assign din.ready = ready;
 
 	 always_comb // Write logic
