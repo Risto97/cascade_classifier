@@ -10,7 +10,7 @@ from functools import partial
 from rects_data import rects_mem
 from pygears.cookbook.rng import rng
 from pygears.cookbook.priority_mux import priority_mux
-from pygears.common import union_collapse, cart_sync_with, quenvelope
+from pygears.common import union_collapse, cart_sync_with, quenvelope, decoupler
 
 from pygears.common import ccat, czip, shred, zip_sync, fmap, cart, dreg
 
@@ -28,6 +28,7 @@ def features(rd_addr: Queue[Uint['w_addr'], 2],
              *, feature_num, feature_size,
              w_rect_data, w_weight_data):
     rst_in | local_rst
+    rd_addr = rd_addr | decoupler
     w_rect = w_rect_data//2
     features_data = []
     for i in range(3):
@@ -38,7 +39,7 @@ def features(rd_addr: Queue[Uint['w_addr'], 2],
             w_rect_data=w_rect_data,
             w_weight_data=w_weight_data,
             feature_size=feature_size)
-        features_data.append(feature | dreg)
+        features_data.append(feature | decoupler)
 
     feature_data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[w_weight_data]])
     features_zip = czip_alt3(*features_data) | Queue[Array[feature_data_t.dtype, 3], 1]

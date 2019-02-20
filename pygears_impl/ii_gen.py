@@ -2,7 +2,7 @@ from pygears import gear, Intf
 from pygears.typing import Queue, Uint
 from gears.fifo2 import fifo2
 from gears.accum import accum
-from pygears.common import ccat, add, shred, flatten
+from pygears.common import ccat, add, shred, flatten, dreg
 
 from pygears.sim import sim
 from pygears.sim.modules import drv
@@ -22,7 +22,7 @@ def accum_wrap(din: Queue[Uint['w_din'], 2], *, add_num):
 
 @gear
 def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
-    accum_s = din | accum_wrap(add_num=frame_size[0]*frame_size[1])
+    accum_s = din | dreg | accum_wrap(add_num=frame_size[0]*frame_size[1])
 
     fifo_out = Intf(accum_s.dtype[0])
 
@@ -39,8 +39,9 @@ def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
 
 @gear
 def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
-    mult_s = din[0] * din[0]
-    sii_in = ccat(mult_s, din[1]) | Queue[mult_s.dtype, 2]
+    din_reg = din | dreg
+    mult_s = din_reg[0] * din_reg[0]
+    sii_in = ccat(mult_s, din_reg[1]) | Queue[mult_s.dtype, 2]
     sii_s = sii_in | ii_gen(frame_size=frame_size)
 
     return sii_s

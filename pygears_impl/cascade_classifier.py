@@ -17,7 +17,7 @@ from pygears.sim.modules.verilator import SimVerilated
 from gearbox import Gearbox
 from functools import partial
 
-from pygears.common import flatten, shred, cart, fmap, invert, dreg, demux_by
+from pygears.common import flatten, shred, cart, fmap, invert, dreg, demux_by, decoupler
 from pygears.cookbook import replicate
 
 from gears.accum import accum_on_eot
@@ -66,19 +66,18 @@ def send_result(addr: Queue[Tuple['y_scaled', 'x_scaled'], 1],
 
 
 @gear
-def cascade_classifier(
-        din: Queue[Uint['w_din'], 1],
-        *,
-        img_size=(240, 320),
-        frame_size=(25, 25),
-        stage_num,
-        feature_num):
+def cascade_classifier(din: Queue[Uint['w_din'], 1],
+                       *,
+                       img_size=(240, 320),
+                       frame_size=(25, 25),
+                       stage_num,
+                       feature_num):
     ram_size = img_size[0] * img_size[1]
     w_addr_img = math.ceil(math.log(ram_size, 2))
 
     rd_addr_s, scaled_addr = rd_addrgen(frame_size=frame_size)
-    rd_addr_s = rd_addr_s | addr_trans(img_size=img_size)
-    img_s = img_ram(din, rd_addr_s, img_size=img_size)
+    rd_addr_s = rd_addr_s | decoupler | addr_trans(img_size=img_size)
+    img_s = img_ram(din, rd_addr_s, img_size=img_size) | dreg
 
     ii_s = img_s | ii_gen(frame_size=frame_size) | dreg
     sii_s = img_s | sii_gen(frame_size=frame_size) | dreg
@@ -88,7 +87,8 @@ def cascade_classifier(
     rst_local = Intf(Unit)
     rst_local_delayed = Intf(Unit)
 
-    stage_cnt = stage_counter(rst_in=rst_local_delayed, stage_num=stage_num) | dreg
+    stage_cnt = stage_counter(
+        rst_in=rst_local_delayed, stage_num=stage_num) | dreg
     rd_addr_feat = feature_addr(
         rst_in=rst_local_delayed,
         stage_counter=stage_cnt,
@@ -102,7 +102,8 @@ def cascade_classifier(
         w_weight_data=w_weight_data) | dreg
 
     fb_rd = frame_buffer(
-        ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size) | dreg
+        ii_s | flatten, rect_addr, rst_in=rst_local,
+        frame_size=frame_size) | decoupler
 
     class_res = classifier(
         rst_in=rst_local_delayed,
@@ -137,7 +138,11 @@ if __name__ == "__main__":
     from pygears.svgen import svgen
     from pygears.conf.registry import registry, bind
     bind('svgen/debug_intfs', [])
-    svgen('/cascade_classifier', outdir='/tools/home/work/cascade_classifier_vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
+    svgen(
+        '/cascade_classifier',
+        outdir=
+        '/tools/home/work/cascade_classifier_vivado/iprepo/cascade_classifier_pygears/build/',
+        wrapper=True)
 
     # from pygears.sim.extens.vcd import VCD
     # sim(outdir='build', extens=[VCD])

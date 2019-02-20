@@ -59,10 +59,11 @@ def weighted_sum(din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1]):
 
 @gear
 def get_leaf_num(din: Tuple[Int['w_sum'], Int['w_thr'], Uint['w_stddev']]):
-    thresh_norm = din[2] * din[1]
-    thresh_norm = thresh_norm | Int[len(thresh_norm.dtype)]
+    din_reg = din | dreg
+    thresh_norm = din_reg[2] * din_reg[1]
+    thresh_norm = thresh_norm | Int[len(thresh_norm.dtype)] | dreg
 
-    dout = lt(ccat(din[0], thresh_norm))
+    dout = lt(ccat(din_reg[0] | dreg, thresh_norm))
 
     return dout
 
@@ -114,7 +115,7 @@ def classifier(fb_data: Queue[Array[
     for i in range(3):
         rect_tmp = ccat(
             fb_data[0][i],
-            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum
+            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum | dreg
         rect_tmp = rect_tmp * 4096
         rect.append(rect_tmp)
     rect_sum = rect[0] + rect[1] + rect[2]

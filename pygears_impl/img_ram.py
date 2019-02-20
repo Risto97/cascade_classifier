@@ -29,6 +29,8 @@ def img_ram(din: Queue[Uint['w_data'], 1],
     w_addr = math.ceil(math.log(ram_size, 2))
     #######################################
 
+    rd_addr = rd_addr | dreg
+
     cfg_rng = ccat(
         const(tout=Uint[1], val=0), const(tout=Uint[w_addr], val=ram_size),
         const(tout=Uint[1], val=1))
@@ -39,7 +41,7 @@ def img_ram(din: Queue[Uint['w_data'], 1],
 
     rd_data = sdp(wr_sdp, rd_addr_sdp[0], depth=ram_size)
 
-    dout = ccat(rd_data, rd_addr[1] | dreg) | Queue[rd_data.dtype, 2]
+    dout = ccat(rd_data, rd_addr[1]) | Queue[rd_data.dtype, 2]
 
     return dout
 
