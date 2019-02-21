@@ -42,6 +42,11 @@ seq = [img.flatten(), img.flatten()]
 w_rect_data = 20
 w_weight_data = 3
 
+@gear(svgen={'compile': True})
+async def yield_on_one_uint(din: Uint[1]) -> Uint[1]:
+    async with din as data:
+        if data == 1:
+            yield data
 
 @gear(svgen={'compile': True})
 async def yield_zeros_and_eot(din: Queue['data_t', 1]) -> Uint[1]:
@@ -61,7 +66,9 @@ def send_result(addr: Queue[Tuple['y_scaled', 'x_scaled'], 1],
     no_detect, detect = demux_by(demux_ctrl, addr[0])
     no_detect | shred
 
-    interrupt = addr[1]
+    print(addr.dtype[1])
+    interrupt = addr[1] | yield_on_one_uint
+    print(interrupt.dtype)
     return detect, interrupt
 
 
@@ -134,14 +141,14 @@ if __name__ == "__main__":
     detected_addr | shred
     interrupt | shred
 
-    from pygears.svgen import svgen
-    from pygears.conf.registry import registry, bind
-    bind('svgen/debug_intfs', [])
-    svgen('/cascade_classifier', outdir='/tools/home/work/cascade_classifier_vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
+    # from pygears.svgen import svgen
+    # from pygears.conf.registry import registry, bind
+    # bind('svgen/debug_intfs', [])
+    # svgen('/cascade_classifier', outdir='/tools/work/vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
 
     # from pygears.sim.extens.vcd import VCD
     # sim(outdir='build', extens=[VCD])
 
-    # sim(outdir='build',
-    #     check_activity=True,
-    #     extens=[partial(Gearbox, live=True, reload=True)])
+    sim(outdir='build',
+        check_activity=True,
+        extens=[partial(Gearbox, live=True, reload=True)])
