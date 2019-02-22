@@ -1,5 +1,5 @@
 from pygears import gear, Intf
-from pygears.typing import Queue, Uint, Unit, Int, Tuple
+from pygears.typing import Queue, Tuple, Uint, Union, Unit
 
 from ii_gen import ii_gen
 from ii_gen import sii_gen
@@ -17,10 +17,9 @@ from pygears.sim.modules.verilator import SimVerilated
 from gearbox import Gearbox
 from functools import partial
 
-from pygears.common import flatten, shred, cart, fmap, invert, dreg, demux_by
-from pygears.cookbook import replicate
+from pygears.common import czip, dreg, flatten, shred
+from pygears.common.filt import qfilt
 
-from gears.accum import accum_on_eot
 from gears.yield_on_one import yield_on_one
 
 from image import loadImage
@@ -42,11 +41,13 @@ seq = [img.flatten(), img.flatten()]
 w_rect_data = 20
 w_weight_data = 3
 
+
 @gear(svgen={'compile': True})
 async def yield_on_one_uint(din: Uint[1]) -> Uint[1]:
     async with din as data:
         if data == 1:
             yield data
+
 
 @gear(svgen={'compile': True})
 async def yield_zeros_and_eot(din: Queue['data_t', 1]) -> Uint[1]:
@@ -58,28 +59,26 @@ async def yield_zeros_and_eot(din: Queue['data_t', 1]) -> Uint[1]:
 
 
 @gear
-def send_result(addr: Queue[Tuple['y_scaled', 'x_scaled'], 1],
-                res: Queue[Uint[1], 1]):
+def send_result(
+        addr: Queue[Tuple[Uint['w_scale'], Tuple['y_scaled', 'x_scaled']], 1],
+        res: Queue[Uint[1], 1]):
 
     demux_ctrl = res | yield_zeros_and_eot
 
-    no_detect, detect = demux_by(demux_ctrl, addr[0])
-    no_detect | shred
+    maybe_send = czip(addr, demux_ctrl) | Queue[Union[Unit, addr.dtype[0]], 1]
+    detected_addr = maybe_send | qfilt(sel=1)
+    interrupt = maybe_send[1] | yield_on_one_uint
 
-    print(addr.dtype[1])
-    interrupt = addr[1] | yield_on_one_uint
-    print(interrupt.dtype)
-    return detect, interrupt
+    return detected_addr, interrupt
 
 
 @gear
-def cascade_classifier(
-        din: Queue[Uint['w_din'], 1],
-        *,
-        img_size=(240, 320),
-        frame_size=(25, 25),
-        stage_num,
-        feature_num):
+def cascade_classifier(din: Queue[Uint['w_din'], 1],
+                       *,
+                       img_size=(240, 320),
+                       frame_size=(25, 25),
+                       stage_num,
+                       feature_num):
     ram_size = img_size[0] * img_size[1]
     w_addr_img = math.ceil(math.log(ram_size, 2))
 
@@ -95,7 +94,8 @@ def cascade_classifier(
     rst_local = Intf(Unit)
     rst_local_delayed = Intf(Unit)
 
-    stage_cnt = stage_counter(rst_in=rst_local_delayed, stage_num=stage_num) | dreg
+    stage_cnt = stage_counter(
+        rst_in=rst_local_delayed, stage_num=stage_num) | dreg
     rd_addr_feat = feature_addr(
         rst_in=rst_local_delayed,
         stage_counter=stage_cnt,
@@ -109,7 +109,8 @@ def cascade_classifier(
         w_weight_data=w_weight_data) | dreg
 
     fb_rd = frame_buffer(
-        ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size) | dreg
+        ii_s | flatten, rect_addr, rst_in=rst_local,
+        frame_size=frame_size) | dreg
 
     class_res = classifier(
         rst_in=rst_local_delayed,

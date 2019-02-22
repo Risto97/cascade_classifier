@@ -6,8 +6,7 @@ from gearbox import Gearbox
 from functools import partial
 
 from pygears.typing import Tuple, Uint, Queue
-from pygears.common import cart, cart_sync_with, ccat, quenvelope, shred, mux, union_collapse, flatten, czip, cart, dreg
-from pygears.common.mux import mux_zip
+from pygears.common import cart, cart, cart_sync_with, ccat, dreg, flatten, shred, union_collapse
 from pygears.common.mux import mux_valve
 from pygears.cookbook.rng import rng
 
@@ -22,11 +21,16 @@ img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)
 
-w_boundary = max(math.ceil(math.log(max(scale_params['boundary_y']), 2)), math.ceil(math.log(max(scale_params['boundary_x']), 2))) + 1
-w_ratio = max(math.ceil(math.log(max(scale_params['y_ratio']), 2)), math.ceil(math.log(max(scale_params['x_ratio']), 2)))
+w_boundary = max(
+    math.ceil(math.log(max(scale_params['boundary_y']), 2)),
+    math.ceil(math.log(max(scale_params['boundary_x']), 2))) + 1
+w_ratio = max(
+    math.ceil(math.log(max(scale_params['y_ratio']), 2)),
+    math.ceil(math.log(max(scale_params['x_ratio']), 2)))
 
 print(scale_params)
 #############################
+
 
 @gear
 def scale_counter():
@@ -35,14 +39,15 @@ def scale_counter():
 
     return scale_cnt
 
+
 @gear
 def boundaries(scale_counter: Queue[Uint['w_scale'], 1]):
     bound_y_param = []
     for val in scale_params['boundary_y']:
-        bound_y_param.append(Uint[w_boundary](val+1))
+        bound_y_param.append(Uint[w_boundary](val + 1))
     bound_x_param = []
     for val in scale_params['boundary_x']:
-        bound_x_param.append(Uint[w_boundary](val+1))
+        bound_x_param.append(Uint[w_boundary](val + 1))
 
     boundary_y = mux_valve(scale_counter[0], *bound_y_param) | union_collapse
     boundary_x = mux_valve(scale_counter[0], *bound_x_param) | union_collapse
@@ -51,6 +56,7 @@ def boundaries(scale_counter: Queue[Uint['w_scale'], 1]):
     boundary = ccat(boundary, scale_counter[1]) | Queue[boundary.dtype, 1]
 
     return boundary
+
 
 @gear
 def scale_ratio(scale_counter: Queue[Uint['w_scale'], 1]):
@@ -70,6 +76,7 @@ def scale_ratio(scale_counter: Queue[Uint['w_scale'], 1]):
 
     return ratio
 
+
 @gear
 def wrap_test():
     scale = scale_counter()
@@ -78,6 +85,7 @@ def wrap_test():
     hop = boundary | hopper | sweeper
 
     return hop
+
 
 @gear
 def hopper(hopper_cfg: Queue[Tuple[Uint['w_bound', Uint['w_bound']]], 1]):
@@ -104,7 +112,8 @@ def sweeper(cfg: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
     cfg_sweep_y = ccat(cfg[0][0], frame_size[0], 1)
     sweep_y = cfg_sweep_y | rng(cnt_steps=True)
     ratio_y = scale_ratio | cart_sync_with(sweep_y)
-    sweep_y = ccat(((sweep_y[0] * ratio_y[0][0]) >> 16) | sweep_y.dtype[0], sweep_y[1]) | Queue[sweep_y.dtype[0], 1]
+    sweep_y = ccat(((sweep_y[0] * ratio_y[0][0]) >> 16) | sweep_y.dtype[0],
+                   sweep_y[1]) | Queue[sweep_y.dtype[0], 1]
 
     cfg_sweep_x = ccat(cfg[0][1], frame_size[1], 1) \
         | cart_sync_with(sweep_y)
@@ -112,13 +121,14 @@ def sweeper(cfg: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
     scale_ratio_sync_x = scale_ratio | cart_sync_with(sweep_y)
     sweep_x = cfg_sweep_x | rng(cnt_steps=True)
     ratio_x = scale_ratio_sync_x | cart_sync_with(sweep_x)
-    sweep_x = ccat(((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0], sweep_x[1]) | Queue[sweep_x.dtype[0], 1]
+    sweep_x = ccat(((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0],
+                   sweep_x[1]) | Queue[sweep_x.dtype[0], 1]
 
     dout = cart(sweep_y, sweep_x)
 
     dout = cart(cfg | flatten, dout)
 
-    dout_eot = ccat( dout[1], ratio_x[1]) | Uint[4]
+    dout_eot = ccat(dout[1], ratio_x[1]) | Uint[4]
 
     dout = ccat(dout[0][1], dout_eot) | Queue[dout.dtype[0][1], 4]
 
@@ -137,8 +147,10 @@ def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4],
 
     return ccat(addr_abs, din[1]) | Queue[addr_abs.dtype, 4]
 
+
 @gear
-def scale_addr(din: Tuple[Tuple['ratio_y', 'ratio_x'], Tuple['hop_y', 'hop_x']]):
+def scale_addr(
+        din: Tuple[Tuple['ratio_y', 'ratio_x'], Tuple['hop_y', 'hop_x']]):
 
     scaled_y = (din[1][0] * din[0][0]) >> 16
     scaled_x = (din[1][1] * din[0][1]) >> 16
@@ -149,6 +161,7 @@ def scale_addr(din: Tuple[Tuple['ratio_y', 'ratio_x'], Tuple['hop_y', 'hop_x']])
 
     return dout
 
+
 @gear
 def rd_addrgen(*, frame_size=(25, 25)):
     scale = scale_counter()
@@ -156,22 +169,17 @@ def rd_addrgen(*, frame_size=(25, 25)):
     boundary = boundaries(scale)
 
     hop_out = boundary | hopper
-    sweep_out = hop_out | sweeper(scale_ratio=ratio, frame_size=frame_size) | dreg
-
-    ratio = ratio | cart_sync_with(hop_out)
-    scaled_addr = scale_addr(ccat(ratio[0], hop_out[0]))
-
-    ratio_sync = cart(scale, hop_out)
-    scaled_eot = (ratio_sync | flatten(lvl=2))[1]
-    scaled_addr = ccat(scaled_addr, scaled_eot) | Queue[scaled_addr.dtype, 1]
+    sweep_out = hop_out | sweeper(
+        scale_ratio=ratio, frame_size=frame_size) | dreg
+    scaled_addr = cart(scale, hop_out) | flatten(lvl=2)
 
     return sweep_out, scaled_addr
 
 
 if __name__ == "__main__":
     frame_size = (25, 25)
-    from pygears.sim.extens.vcd import VCD
-    sweep_addr, scaled_addr = rd_addrgen(frame_size=frame_size, sim_cls=SimVerilated)
+    sweep_addr, scaled_addr = rd_addrgen(
+        frame_size=frame_size, sim_cls=SimVerilated)
 
     sweep_addr | shred
     scaled_addr | shred
