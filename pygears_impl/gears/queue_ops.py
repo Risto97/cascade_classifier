@@ -38,7 +38,6 @@ async def queue_edges(din: Queue[Uint['w_data'], 2], *,
 @gear(svgen={'compile': True})
 async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *,
                            w_data=b'w_data') -> b'Queue[Uint[w_data], 2]':
-    # output_active = Uint[1](1)
     output_active = Uint[1](1)
     async for (data, eot) in din:
         if eot == 1:
@@ -48,47 +47,14 @@ async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *,
             yield (data, eot)
 
 
-
 @gear
 def queue_head_tail(din: Queue[Uint['w_data'], 2], *, w_data=b'w_data'):
     dout = din | queue_edges | pick_queue_edges
     return dout
 
 
-# @gear
-# def queue_one_by_one(din0: 'w_din0', din1: 'w_din1') -> ('w_din0', 'w_din1'):
-#     pass
-
-@gear
-def queue_one_by_one_w_trig(din0: 'w_din0', din1: 'w_din1', trig_in: Uint[1]) -> ('w_din0', 'w_din1'):
-    pass
-
 if __name__ == "__main__":
     from pygears.common import shred
-
-    # din_t = Queue[Uint[8], 1]
-    # seq0 = []
-    # for i in range(5):
-    #     seq_x = []
-    #     for x in range(5):
-    #         seq_x.append(x)
-    #     seq0.append(seq_x)
-
-    # seq1 = []
-    # for i in range(5):
-    #     seq_x = []
-    #     for x in range(5):
-    #         seq_x.append(x)
-    #     seq1.append(seq_x)
-
-    # asd0, asd1 = queue_one_by_one(
-    #     din0=drv(t=din_t,seq=seq0),
-    #     din1=drv(t=din_t,seq=seq1),
-    #     sim_cls=SimVerilated)
-
-    # asd0 | shred
-    # asd1 | shred
-
     seq = []
     for i in range(3):
         seq_y = []

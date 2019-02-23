@@ -26,8 +26,8 @@ from image import loadImage
 
 import math
 
-img = loadImage("../datasets/proba.pgm")
-# img = loadImage("../datasets/rtl7.jpg")
+# img = loadImage("../datasets/proba.pgm")
+img = loadImage("../datasets/rtl7.jpg")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
@@ -79,41 +79,38 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
                        frame_size=(25, 25),
                        stage_num,
                        feature_num):
-    ram_size = img_size[0] * img_size[1]
-    w_addr_img = math.ceil(math.log(ram_size, 2))
 
-    rd_addr_s, scaled_addr = rd_addrgen(frame_size=frame_size)
+    rd_addr_s, maybe_send_addr = rd_addrgen(frame_size=frame_size)
     rd_addr_s = rd_addr_s | addr_trans(img_size=img_size)
     img_s = img_ram(din, rd_addr_s, img_size=img_size)
 
-    ii_s = img_s | ii_gen(frame_size=frame_size) | dreg
-    sii_s = img_s | sii_gen(frame_size=frame_size) | dreg
+    ii_s = img_s | ii_gen(frame_size=frame_size)
+    sii_s = img_s | sii_gen(frame_size=frame_size)
 
     stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
 
     rst_local = Intf(Unit)
-    rst_local_delayed = Intf(Unit)
 
     stage_cnt = stage_counter(
-        rst_in=rst_local_delayed, stage_num=stage_num) | dreg
+        rst_in=rst_local, stage_num=stage_num)
     rd_addr_feat = feature_addr(
-        rst_in=rst_local_delayed,
+        rst_in=rst_local,
         stage_counter=stage_cnt,
-        feature_num=feature_num) | dreg
+        feature_num=feature_num)
     rect_addr = features(
         rd_addr_feat,
-        rst_in=rst_local_delayed,
+        rst_in=rst_local,
         feature_num=feature_num,
         feature_size=frame_size,
         w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data) | dreg
+        w_weight_data=w_weight_data)
 
     fb_rd = frame_buffer(
         ii_s | flatten, rect_addr, rst_in=rst_local,
-        frame_size=frame_size) | dreg
+        frame_size=frame_size)
 
     class_res = classifier(
-        rst_in=rst_local_delayed,
+        rst_in=rst_local,
         fb_data=fb_rd,
         feat_addr=rd_addr_feat,
         stage_addr=stage_cnt,
@@ -121,10 +118,9 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
         feature_num=feature_num,
         stage_num=stage_num)
 
-    detected_addr, interrupt = send_result(addr=scaled_addr, res=class_res)
+    detected_addr, interrupt = send_result(addr=maybe_send_addr, res=class_res)
 
     rst_local |= class_res | yield_on_one
-    rst_local_delayed |= rst_local | dreg | dreg | dreg | dreg
 
     return detected_addr, interrupt
 

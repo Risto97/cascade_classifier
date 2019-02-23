@@ -1,5 +1,5 @@
 from pygears import gear, Intf
-from pygears.typing import Queue, Uint
+from pygears.typing import Queue, Uint, bitw
 from gears.fifo2 import fifo2
 from gears.accum import accum
 from pygears.common import ccat, add, shred, flatten
@@ -22,7 +22,9 @@ def accum_wrap(din: Queue[Uint['w_din'], 2], *, add_num):
 
 @gear
 def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
-    accum_s = din | accum_wrap(add_num=frame_size[0]*frame_size[1])
+    fifo_depth = 2**bitw(frame_size[1])
+
+    accum_s = din | accum_wrap(add_num=frame_size[0] * frame_size[1])
 
     fifo_out = Intf(accum_s.dtype[0])
 
@@ -30,7 +32,8 @@ def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
 
     fifo_in = ccat(add_s, accum_s[1]) | Queue[add_s.dtype, 2]
 
-    fifo_out |= fifo_in | flatten | fifo2(depth=32, preload=frame_size[1], regout=False)
+    fifo_out |= fifo_in | flatten | fifo2(
+        depth=fifo_depth, preload=frame_size[1], regout=False)
 
     ii_s = fifo_in
 

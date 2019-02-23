@@ -26,12 +26,9 @@ def img_ram(din: Queue[Uint['w_data'], 1],
             img_size=(240, 320)):
     ##########Parameters###################
     ram_size = img_size[0] * img_size[1]
-    w_addr = math.ceil(math.log(ram_size, 2))
     #######################################
 
-    cfg_rng = ccat(
-        const(tout=Uint[1], val=0), const(tout=Uint[w_addr], val=ram_size),
-        const(tout=Uint[1], val=1))
+    cfg_rng = ccat(0, ram_size, 1)
     wr_addr = cfg_rng | rng
 
     din, rd_addr_sdp = queue_one_by_one(din, rd_addr)

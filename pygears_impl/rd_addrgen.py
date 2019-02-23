@@ -15,8 +15,8 @@ import math
 from dump_hw import scaleParams
 from image import ImageClass
 ###### CHANGE  ##############
-img_fn = '../datasets/proba.pgm'
-# img_fn = '../datasets/rtl7.jpg'
+# img_fn = '../datasets/proba.pgm'
+img_fn = '../datasets/rtl7.jpg'
 img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)
@@ -78,16 +78,6 @@ def scale_ratio(scale_counter: Queue[Uint['w_scale'], 1]):
 
 
 @gear
-def wrap_test():
-    scale = scale_counter()
-    boundary = boundaries(scale)
-
-    hop = boundary | hopper | sweeper
-
-    return hop
-
-
-@gear
 def hopper(hopper_cfg: Queue[Tuple[Uint['w_bound', Uint['w_bound']]], 1]):
     cfg_hop_y = ccat(0, hopper_cfg[0][0], 1)
     hop_y = cfg_hop_y | rng
@@ -102,31 +92,28 @@ def hopper(hopper_cfg: Queue[Tuple[Uint['w_bound', Uint['w_bound']]], 1]):
 
 
 @gear
-def sweeper(cfg: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
+def sweeper(hop: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
             scale_ratio: Queue[Tuple[Uint['w_ratio'], Uint['w_ratio']], 1],
             *,
             frame_size=(25, 25)):
 
-    scale_ratio = scale_ratio | cart_sync_with(cfg)
+    scale_ratio = scale_ratio | cart_sync_with(hop)
 
-    cfg_sweep_y = ccat(cfg[0][0], frame_size[0], 1)
+    cfg_sweep_y = ccat(hop[0][0], frame_size[0], 1)
     sweep_y = cfg_sweep_y | rng(cnt_steps=True)
     ratio_y = scale_ratio | cart_sync_with(sweep_y)
-    sweep_y = ccat(((sweep_y[0] * ratio_y[0][0]) >> 16) | sweep_y.dtype[0],
-                   sweep_y[1]) | Queue[sweep_y.dtype[0], 1]
+    scaled_y = ((sweep_y[0] * ratio_y[0][0]) >> 16) | sweep_y.dtype[0]
+    sweep_y = ccat(scaled_y, sweep_y[1]) | Queue[sweep_y.dtype[0], 1]
 
-    cfg_sweep_x = ccat(cfg[0][1], frame_size[1], 1) \
+    cfg_sweep_x = ccat(hop[0][1], frame_size[1], 1) \
         | cart_sync_with(sweep_y)
-
-    scale_ratio_sync_x = scale_ratio | cart_sync_with(sweep_y)
     sweep_x = cfg_sweep_x | rng(cnt_steps=True)
-    ratio_x = scale_ratio_sync_x | cart_sync_with(sweep_x)
-    sweep_x = ccat(((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0],
-                   sweep_x[1]) | Queue[sweep_x.dtype[0], 1]
+    ratio_x = ratio_y | cart_sync_with(sweep_x)
+    scaled_x = ((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0]
+    sweep_x = ccat(scaled_x, sweep_x[1]) | Queue[sweep_x.dtype[0], 1]
 
     dout = cart(sweep_y, sweep_x)
-
-    dout = cart(cfg | flatten, dout)
+    dout = cart(hop | flatten, dout)
 
     dout_eot = ccat(dout[1], ratio_x[1]) | Uint[4]
 
@@ -146,20 +133,6 @@ def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4],
     addr_abs = din[0][1] + din[0][0] * img_size[1] | Uint[w_addr]
 
     return ccat(addr_abs, din[1]) | Queue[addr_abs.dtype, 4]
-
-
-@gear
-def scale_addr(
-        din: Tuple[Tuple['ratio_y', 'ratio_x'], Tuple['hop_y', 'hop_x']]):
-
-    scaled_y = (din[1][0] * din[0][0]) >> 16
-    scaled_x = (din[1][1] * din[0][1]) >> 16
-
-    scaled_y = scaled_y | Uint[len(scaled_y.dtype) - 16]
-    scaled_x = scaled_x | Uint[len(scaled_x.dtype) - 16]
-    dout = ccat(scaled_y, scaled_x)
-
-    return dout
 
 
 @gear
@@ -183,9 +156,6 @@ if __name__ == "__main__":
 
     sweep_addr | shred
     scaled_addr | shred
-
-    # y = wrap_test(sim_cls=SimVerilated)
-    # y | shred
 
     sim(outdir='build',
         check_activity=True,
