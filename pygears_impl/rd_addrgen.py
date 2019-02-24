@@ -15,8 +15,8 @@ import math
 from dump_hw import scaleParams
 from image import ImageClass
 ###### CHANGE  ##############
-# img_fn = '../datasets/proba.pgm'
-img_fn = '../datasets/rtl7.jpg'
+img_fn = '../datasets/proba.pgm'
+# img_fn = '../datasets/rtl7.jpg'
 img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)

@@ -11,7 +11,6 @@ from pygears.common import ccat, shred, dreg, decoupler, fifo, zip_sync, cart
 from pygears.common.serialize import serialize, active_serialize
 from pygears.common import rom
 from pygears.cookbook import rng
-from gears.serialize_queue import serialize_queue
 
 TRdDin = Uint['w_addr']
 outnames = ['rd_data_if']

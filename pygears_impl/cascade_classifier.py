@@ -26,8 +26,8 @@ from image import loadImage
 
 import math
 
-# img = loadImage("../datasets/proba.pgm")
-img = loadImage("../datasets/rtl7.jpg")
+img = loadImage("../datasets/proba.pgm")
+# img = loadImage("../datasets/rtl7.jpg")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
@@ -95,8 +95,7 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
         rst_in=rst_local, stage_num=stage_num)
     rd_addr_feat = feature_addr(
         rst_in=rst_local,
-        stage_counter=stage_cnt,
-        feature_num=feature_num)
+        stage_counter=stage_cnt)
     rect_addr = features(
         rd_addr_feat,
         rst_in=rst_local,

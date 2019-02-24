@@ -6,7 +6,7 @@ from pygears.sim.modules.verilator import SimVerilated
 from gearbox import Gearbox
 from functools import partial
 
-from pygears.common import ccat, shred
+from pygears.common import ccat, shred, dreg
 from pygears.common import cart_sync_with
 from pygears.common.rom import rom
 from pygears.cookbook import rng
@@ -43,9 +43,10 @@ def stage_counter(rst_in: Unit, *, stage_num):
 
 
 @gear
-def feature_addr(stage_counter: Queue[Uint['w_stage_addr'], 1], rst_in: Unit,
-                 *, feature_num):
+def feature_addr(stage_counter: Queue[Uint['w_stage_addr'], 1], rst_in: Unit):
     rst_in | local_rst
+
+    stage_counter = stage_counter | dreg
     feature_num_in_stage = stage_counter[0] | rom(
         data=stages_cnt_l, dtype=Uint[w_stage_cnt])
 
@@ -59,7 +60,7 @@ def feature_addr(stage_counter: Queue[Uint['w_stage_addr'], 1], rst_in: Unit,
     feature_cnt = ccat(feature_cnt[0],
                        dout_eot) | Queue[Uint[int(w_stage_cnt / 2)], 2]
 
-    return feature_cnt
+    return feature_cnt | dreg
 
 
 if __name__ == "__main__":

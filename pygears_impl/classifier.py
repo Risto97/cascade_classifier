@@ -82,7 +82,6 @@ def leaf_vals(feat_addr: Queue[Uint['w_addr_feat'], 2], din: Uint[1]):
 @gear
 def get_stage_res(stage_addr: Queue[Uint['w_stage_addr'], 1],
                   din: Int['w_din'], *, stage_num):
-    # rd_addr = rng_cnt(cnt_num=stage_num)
     stage_threshold = rom(
         stage_addr[0], data=stageThreshold_l, dtype=Int[w_stage_thresh])
 
@@ -107,7 +106,10 @@ def classifier(fb_data: Queue[Array[
                stage_num):
     rst_in | local_rst
 
-    stddev_repl = replicate(ccat(2913, stddev | dreg))
+    stage_addr = stage_addr | dreg
+    stddev = stddev | dreg
+
+    stddev_repl = replicate(ccat(2913, stddev))
     stddev_repl = stddev_repl[0]
     rect_data_t = Intf(Tuple[Uint[w_ii], Uint[1], Int[w_weight]])
     rect = []
