@@ -108,6 +108,8 @@ def classifier(fb_data: Queue[Array[
 
     stage_addr = stage_addr | dreg
     stddev = stddev | dreg
+    fb_data = fb_data | dreg
+    feat_addr = feat_addr | dreg
 
     stddev_repl = replicate(ccat(2913, stddev))
     stddev_repl = stddev_repl[0]
@@ -116,7 +118,7 @@ def classifier(fb_data: Queue[Array[
     for i in range(3):
         rect_tmp = ccat(
             fb_data[0][i],
-            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum
+            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum | dreg
         rect_tmp = rect_tmp * 4096
         rect.append(rect_tmp)
     rect_sum = rect[0] + rect[1] + rect[2]

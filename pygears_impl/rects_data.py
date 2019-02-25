@@ -51,12 +51,12 @@ def calc_rect_coords(
     height = din[0]
     A = din[2]
     B = (A + width) | Uint[w_rect]
-    D = (A + width + height * feature_size[1]) | Uint[w_rect]
-    C = ((A + width + height * feature_size[1]) - width) | Uint[w_rect]
+    tmp = height * feature_size[1]
+    D = (B + tmp) | Uint[w_rect]
+    C = (D - width) | Uint[w_rect]
 
     sign = ccat(1, 0, 0, 1) | Array[Uint[1], 4] | serialize
-    # rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4] | serialize_queue
-    rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4] # | active_serialize
+    rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4]
     rect_coord = ccat(rect_coord, 4) | Tuple[Array[Uint[w_rect], 4], Uint[3]] | active_serialize
 
     return ccat(rect_coord[0], sign, rect_coord[1]) | \

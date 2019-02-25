@@ -4,6 +4,7 @@ from pygears.typing import Queue, Uint
 from frame_sum import frame_sum
 
 from pygears.common.rom import rom
+from pygears.common import dreg
 
 from sqrt_approx import createSqrtApprox
 
@@ -27,10 +28,10 @@ def stddev(ii_s: Queue[Uint['w_ii'], 2],
     sqrt_shift = math.ceil(math.log(sqrt_step, 2))
     ###################
 
-    ii_sum = ii_s | frame_sum
+    ii_sum = ii_s | frame_sum | dreg
     ii_sum_squared = ii_sum[0] * ii_sum[0]
 
-    sii_sum = sii_s | frame_sum
+    sii_sum = sii_s | frame_sum | dreg
     sii_mult1 = sii_sum[0] * (frame_size[0] - 1)
     sii_mult2 = sii_mult1 * (frame_size[1] - 1)
 
