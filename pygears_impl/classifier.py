@@ -59,10 +59,12 @@ def weighted_sum(din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1]):
 
 @gear
 def get_leaf_num(din: Tuple[Int['w_sum'], Int['w_thr'], Uint['w_stddev']]):
-    thresh_norm = din[2] * din[1]
-    thresh_norm = thresh_norm | Int[len(thresh_norm.dtype)]
+    din = din | dreg
 
-    dout = lt(ccat(din[0], thresh_norm))
+    thresh_norm = din[2] * din[1]
+    thresh_norm = thresh_norm | Int[len(thresh_norm.dtype)] | dreg
+
+    dout = lt(ccat(din[0] | dreg, thresh_norm))
 
     return dout
 

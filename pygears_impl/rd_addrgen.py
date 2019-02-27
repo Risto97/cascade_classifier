@@ -7,6 +7,7 @@ from functools import partial
 
 from pygears.typing import Tuple, Uint, Queue
 from pygears.common import cart, cart, cart_sync_with, ccat, dreg, flatten, shred, union_collapse
+from pygears.common import decoupler
 from pygears.common.mux import mux_valve
 from pygears.cookbook.rng import rng
 
@@ -16,7 +17,7 @@ from dump_hw import scaleParams
 from image import ImageClass
 ###### CHANGE  ##############
 img_fn = '../datasets/proba.pgm'
-# img_fn = '../datasets/rtl7.jpg'
+img_fn = '../datasets/rtl7.jpg'
 img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)
@@ -119,7 +120,7 @@ def sweeper(hop: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
 
     dout = ccat(dout[0][1], dout_eot) | Queue[dout.dtype[0][1], 4]
 
-    return dout
+    return dout | decoupler
 
 
 @gear
@@ -141,7 +142,7 @@ def rd_addrgen(*, frame_size=(25, 25)):
     ratio = scale_ratio(scale)
     boundary = boundaries(scale)
 
-    hop_out = boundary | hopper
+    hop_out = boundary | hopper | decoupler
     sweep_out = hop_out | sweeper(
         scale_ratio=ratio, frame_size=frame_size) | dreg
     scaled_addr = cart(scale, hop_out) | flatten(lvl=2)

@@ -1,7 +1,7 @@
 from pygears import gear, Intf
 from pygears.typing import Uint, Queue, Array, Tuple, Int, Unit
 
-from pygears.common import cart, ccat, dreg, shred, czip
+from pygears.common import cart, ccat, dreg, shred, czip, decoupler
 from pygears.common import local_rst
 
 from rects_data import rects_mem
@@ -16,6 +16,8 @@ def features(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, feature_num,
 
     rst_in | local_rst
 
+    rd_addr = rd_addr | decoupler
+
     features_data = []
     for i in range(3):
         feature = rects_mem(
@@ -25,7 +27,7 @@ def features(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, feature_num,
             w_rect_data=w_rect_data,
             w_weight_data=w_weight_data,
             feature_size=feature_size)
-        features_data.append(feature | dreg)
+        features_data.append(feature | decoupler)
 
     feature_data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[w_weight_data]])
     features_zip = czip(

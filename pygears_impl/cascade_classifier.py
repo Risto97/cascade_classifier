@@ -26,8 +26,8 @@ from image import loadImage
 
 import math
 
-img = loadImage("../datasets/proba.pgm")
-# img = loadImage("../datasets/rtl7.jpg")
+# img = loadImage("../datasets/proba.pgm")
+img = loadImage("../datasets/rtl7.jpg")
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913
