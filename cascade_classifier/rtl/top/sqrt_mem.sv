@@ -39,9 +39,9 @@ module sqrt_mem
    sqrt_rom_i(
               .clk(clk),
               .rst(rst),
-              .en1(ena),
-              .addr1(addra),
-              .data1(doa)
+              .ena(ena),
+              .addra(addra),
+              .doa(doa)
               );
 
 endmodule: sqrt_mem

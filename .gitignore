@@ -165,3 +165,5 @@ dmypy.json
 *.vcd
 obj_dir/
 cascade_classifier/rtl/top/rom/*
+cascade_classifier/rtl/top/params.sv
+cascade_classifier/rtl/img.hpp

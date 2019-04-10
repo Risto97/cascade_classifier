@@ -60,7 +60,7 @@ class SqrtClass(object):
 
         hex_w = self.w_data//4
 
-        print(f"module rom_mem", file=f)
+        print(f"module sqrt_rom", file=f)
         print(f"  #(", file=f)
         print(f"     W_DATA = {self.w_data},", file=f)
         print(f"     DEPTH = 64,", file=f)
@@ -84,7 +84,7 @@ class SqrtClass(object):
             print(f"         mem[{i}] = {self.w_data}\'h{str};", file=f)
         print(f"     end\n", file=f)
 
-        print(f"\nendmodule: rom_mem", file=f)
+        print(f"\nendmodule: sqrt_rom", file=f)
 
         pass
 

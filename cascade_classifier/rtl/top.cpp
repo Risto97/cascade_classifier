@@ -6,9 +6,6 @@
 #include <iostream>
 #include "img.hpp"
 
-#define FEATURE_WIDTH 24
-#define FEATURE_HEIGHT 24
-
 int main(int argc, char **argv, char **env){
   int i;
   int clk;
