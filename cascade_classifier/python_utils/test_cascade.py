@@ -1,19 +1,17 @@
 import cv2
 import xmltodict
-from create_cascade import createCascade
+from cascade import CascadeClass
 from frame import FrameClass
 from image import ImageClass
 import numpy as np
 
 import time
 
-img_fn = 'datasets/lena.pgm'
-xml_file = r"models/haarcascade_frontalface_default.xml"
-with open(xml_file) as fd:
-    doc = xmltodict.parse(fd.read())
+img_fn = '../datasets/lena.pgm'
+xml_file = r"../xml_models/haarcascade_frontalface_default.xml"
 
 img = ImageClass()
-cascade = createCascade(doc)
+cascade = CascadeClass(xml_file)
 
 img.loadImage(img_fn)
 img.scaleFactor = 1.2
