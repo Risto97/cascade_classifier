@@ -1,8 +1,8 @@
 import cv2
 import xmltodict
-from cascade import CascadeClass
-from frame import FrameClass
-from image import ImageClass
+from cascade_classifier.python_utils.cascade import CascadeClass
+from cascade_classifier.python_utils.frame import FrameClass
+from cascade_classifier.python_utils.image import ImageClass
 import numpy as np
 
 import time

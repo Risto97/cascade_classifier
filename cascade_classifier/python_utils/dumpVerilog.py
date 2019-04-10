@@ -1,4 +1,4 @@
-from VerilogROM import dumpVerilogROM
+from cascade_classifier.python_utils.VerilogROM import dumpVerilogROM
 import math
 
 
