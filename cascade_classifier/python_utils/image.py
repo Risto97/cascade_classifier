@@ -121,7 +121,7 @@ def loadImage(fn):
     return img.img
 
 if __name__ == "__main__":
-    img_fn = "datasets/rtl.pgm"
+    img_fn = "../datasets/rtl.pgm"
     img = ImageClass()
     img.loadImage(img_fn)
 

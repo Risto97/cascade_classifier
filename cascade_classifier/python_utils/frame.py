@@ -80,7 +80,7 @@ class FrameClass(object):
 
 
 if __name__ == "__main__":
-    img_fn = 'datasets/proba.pgm'
+    img_fn = '../datasets/proba.pgm'
 
     img = FrameClass()
     img.frame = cv2.imread(img_fn, 0)
