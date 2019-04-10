@@ -22,12 +22,13 @@ from pygears.common.filt import qfilt
 
 from gears.yield_on_one import yield_on_one
 
-from image import loadImage
+from cascade_classifier.python_utils.image import ImageClass
 
 import math
 
-# img = loadImage("../datasets/proba.pgm")
-img = loadImage("../datasets/rtl7.jpg")
+img_fn = "../datasets/rtl7.jpg"
+img = ImageClass()
+img.loadImage(img_fn)
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913

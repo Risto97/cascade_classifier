@@ -16,10 +16,11 @@ from pygears.common import local_rst
 import math
 
 ## change this ##
-from cascade import create_cascade
-cascade_model = create_cascade("../models/haarcascade_frontalface_default.xml")
+xml_file = r"../xml_models/haarcascade_frontalface_default.xml"
+from cascade_classifier.python_utils.cascade import CascadeClass
+cascade = CascadeClass(xml_file)
 
-featureStagesCount = cascade_model.getFeatureStagesCount()
+featureStagesCount = cascade.getFeatureStagesCount()
 stages_cnt_l = featureStagesCount[0]
 w_stage_cnt = featureStagesCount[1]
 #################

@@ -2,7 +2,6 @@ default:
 	python dump_rtl_verilog.py
 sim: default
 	./verilate.sh
-	# make -j -C obj_dir/ -f Vtop.mk Vtop
 	obj_dir/Vtop
 run: sim
 	gtkwave top.vcd top.sav &

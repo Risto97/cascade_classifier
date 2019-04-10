@@ -14,8 +14,6 @@ from functools import partial
 
 from gears.queue_one_by_one import queue_one_by_one
 
-from image import loadImage
-
 import math
 
 
@@ -42,6 +40,7 @@ def img_ram(din: Queue[Uint['w_data'], 1],
 
 
 if __name__ == "__main__":
+    from cascade_classifier.python_utils.image import loadImage
     img = loadImage("../datasets/rtl.pgm")
     img_size = img.shape
 
