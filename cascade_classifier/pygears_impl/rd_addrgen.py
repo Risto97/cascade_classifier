@@ -2,7 +2,6 @@ from pygears import gear
 
 from pygears.sim import sim
 from pygears.sim.modules.verilator import SimVerilated
-from gearbox import Gearbox
 from functools import partial
 
 from pygears.typing import Tuple, Uint, Queue
@@ -150,14 +149,14 @@ def rd_addrgen(*, frame_size=(25, 25)):
     return sweep_out, scaled_addr
 
 
-if __name__ == "__main__":
-    frame_size = (25, 25)
-    sweep_addr, scaled_addr = rd_addrgen(
-        frame_size=frame_size, sim_cls=SimVerilated)
+# if __name__ == "__main__":
+#     frame_size = (25, 25)
+#     sweep_addr, scaled_addr = rd_addrgen(
+#         frame_size=frame_size, sim_cls=SimVerilated)
 
-    sweep_addr | shred
-    scaled_addr | shred
+#     sweep_addr | shred
+#     scaled_addr | shred
 
-    sim(outdir='build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+#     sim(outdir='build',
+#         check_activity=True,
+#         extens=[partial(Gearbox, live=True, reload=True)])

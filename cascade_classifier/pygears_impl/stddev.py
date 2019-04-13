@@ -44,6 +44,6 @@ def stddev(ii_s: Queue[Uint['w_ii'], 2],
     return stddev_res
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    pass
+#     pass

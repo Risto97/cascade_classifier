@@ -4,7 +4,6 @@ from pygears.typing import Array, Int, Uint, Queue, Tuple
 from pygears.sim import sim
 from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
-from gearbox import Gearbox
 from functools import partial
 
 from pygears.common import ccat, shred, dreg, decoupler, fifo, zip_sync, cart
@@ -89,21 +88,21 @@ def rects_mem(rd_addr_if: TRdDin, *, inst_num, w_rect_data, w_weight_data,
     return dout
 
 
-if __name__ == "__main__":
-    feature_num = 2913
-    w_rect_data = 20
-    w_weight_data = 3
-    feature_size = (25, 25)
-    seq = list(range(feature_num))
-    rects_mem(
-        rd_addr_if=drv(t=Uint[12], seq=seq),
-        inst_num=0,
-        feature_num=feature_num,
-        w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data,
-        feature_size=feature_size,
-        sim_cls=SimVerilated) | shred
+# if __name__ == "__main__":
+#     feature_num = 2913
+#     w_rect_data = 20
+#     w_weight_data = 3
+#     feature_size = (25, 25)
+#     seq = list(range(feature_num))
+#     rects_mem(
+#         rd_addr_if=drv(t=Uint[12], seq=seq),
+#         inst_num=0,
+#         feature_num=feature_num,
+#         w_rect_data=w_rect_data,
+#         w_weight_data=w_weight_data,
+#         feature_size=feature_size,
+#         sim_cls=SimVerilated) | shred
 
-    sim(outdir='build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+#     sim(outdir='build',
+#         check_activity=True,
+#         extens=[partial(Gearbox, live=True, reload=True)])

@@ -162,25 +162,25 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     return stage_res
 
 
-if __name__ == "__main__":
-    from pygears.sim import sim
-    from pygears.sim.modules import drv
-    from pygears.sim.modules.verilator import SimVerilated
-    from gearbox import Gearbox
-    from functools import partial
+# if __name__ == "__main__":
+#     from pygears.sim import sim
+#     from pygears.sim.modules import drv
+#     from pygears.sim.modules.verilator import SimVerilated
+#     from gearbox import Gearbox
+#     from functools import partial
 
-    din_t = Queue[Tuple[Uint[19], Uint[1], Int[2]], 1]
+#     din_t = Queue[Tuple[Uint[19], Uint[1], Int[2]], 1]
 
-    seq = []
-    seq.append((805, 1, -1))
-    seq.append((36407, 0, -1))
-    seq.append((1273, 0, -1))
-    seq.append((45228, 1, -1))
+#     seq = []
+#     seq.append((805, 1, -1))
+#     seq.append((36407, 0, -1))
+#     seq.append((1273, 0, -1))
+#     seq.append((45228, 1, -1))
 
-    seq = [seq] * 3
+#     seq = [seq] * 3
 
-    weighted_sum(din=drv(t=din_t, seq=seq), sim_cls=SimVerilated) | shred
+#     weighted_sum(din=drv(t=din_t, seq=seq), sim_cls=SimVerilated) | shred
 
-    sim(outdir='build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+#     sim(outdir='build',
+#         check_activity=True,
+#         extens=[partial(Gearbox, live=True, reload=True)])

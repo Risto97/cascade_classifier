@@ -41,36 +41,36 @@ def features(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, feature_num,
     return dout
 
 
-if __name__ == "__main__":
-    from pygears.sim import sim
-    from pygears.sim.modules import drv
-    from pygears.sim.modules.verilator import SimVerilated
-    from gearbox import Gearbox
-    from functools import partial
+# if __name__ == "__main__":
+#     from pygears.sim import sim
+#     from pygears.sim.modules import drv
+#     from pygears.sim.modules.verilator import SimVerilated
+#     from gearbox import Gearbox
+#     from functools import partial
 
-    feature_num = 2913
-    w_rect_data = 20
-    w_weight_data = 3
-    feature_size = (25, 25)
-    w_addr = math.ceil(math.log(feature_num, 2))
-    rd_addr_t = Queue[Uint['w_addr'], 2]
+#     feature_num = 2913
+#     w_rect_data = 20
+#     w_weight_data = 3
+#     feature_size = (25, 25)
+#     w_addr = math.ceil(math.log(feature_num, 2))
+#     rd_addr_t = Queue[Uint['w_addr'], 2]
 
-    rd_seq = [[
-        list(range(9)),
-        list(range(9, 25)),
-        list(range(25, 32)),
-        list(range(32, 55)),
-        list(range(55, 100))
-    ]]
+#     rd_seq = [[
+#         list(range(9)),
+#         list(range(9, 25)),
+#         list(range(25, 32)),
+#         list(range(32, 55)),
+#         list(range(55, 100))
+#     ]]
 
-    features(
-        rd_addr=drv(t=rd_addr_t[w_addr], seq=rd_seq),
-        feature_num=feature_num,
-        w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data,
-        feature_size=feature_size,
-        sim_cls=SimVerilated) | shred
+#     features(
+#         rd_addr=drv(t=rd_addr_t[w_addr], seq=rd_seq),
+#         feature_num=feature_num,
+#         w_rect_data=w_rect_data,
+#         w_weight_data=w_weight_data,
+#         feature_size=feature_size,
+#         sim_cls=SimVerilated) | shred
 
-    sim(outdir='build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+#     sim(outdir='build',
+#         check_activity=True,
+#         extens=[partial(Gearbox, live=True, reload=True)])

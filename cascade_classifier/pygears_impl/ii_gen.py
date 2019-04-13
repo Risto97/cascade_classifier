@@ -7,9 +7,8 @@ from pygears.common import ccat, add, shred, flatten, dreg
 from pygears.sim import sim
 from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
-from gearbox import Gearbox
+# from gearbox import Gearbox
 from functools import partial
-
 
 @gear
 def accum_wrap(din: Queue[Uint['w_din'], 2], *, add_num):
@@ -50,26 +49,26 @@ def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
     return sii_s
 
 
-if __name__ == "__main__":
-    din_t = Queue[Uint[8], 2]
-    frame_size = (25, 25)
-    seq = []
-    for i in range(2):
-        seq_y = []
-        for y in range(frame_size[0]):
-            seq_x = []
-            for x in range(frame_size[1]):
-                seq_x.append(x + 1)
-            seq_y.append(seq_x)
-        seq.append(seq_y)
+# if __name__ == "__main__":
+# din_t = Queue[Uint[8], 2]
+# frame_size = (25, 25)
+# seq = []
+# for i in range(2):
+#     seq_y = []
+#     for y in range(frame_size[0]):
+#         seq_x = []
+#         for x in range(frame_size[1]):
+#             seq_x.append(x + 1)
+#         seq_y.append(seq_x)
+#     seq.append(seq_y)
 
-    sii_gen(
-        din=drv(t=din_t, seq=seq), frame_size=frame_size,
-        sim_cls=SimVerilated) | shred
-    ii_gen(
-        din=drv(t=din_t, seq=seq), frame_size=frame_size,
-        sim_cls=SimVerilated) | shred
+# sii_gen(
+#     din=drv(t=din_t, seq=seq), frame_size=frame_size,
+#     sim_cls=SimVerilated) | shred
+# ii_gen(
+#     din=drv(t=din_t, seq=seq), frame_size=frame_size,
+#     sim_cls=SimVerilated) | shred
 
-    sim(outdir='./build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+# sim(outdir='./build',
+#     check_activity=True,
+#     extens=[partial(Gearbox, live=True, reload=True)])

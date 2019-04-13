@@ -14,7 +14,6 @@ from addr_utils import feature_addr, stage_counter
 from pygears.sim import sim
 from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
-from gearbox import Gearbox
 from functools import partial
 
 from pygears.common import czip, dreg, flatten, shred
@@ -126,18 +125,18 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
     return detected_addr, interrupt
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    detected_addr, interrupt = cascade_classifier(
-        din=drv(t=din_t, seq=seq),
-        img_size=img_size,
-        frame_size=frame_size,
-        feature_num=feature_num,
-        stage_num=stage_num,
-        sim_cls=partial(SimVerilated, timeout=1000000))
+detected_addr, interrupt = cascade_classifier(
+    din=drv(t=din_t, seq=seq),
+    img_size=img_size,
+    frame_size=frame_size,
+    feature_num=feature_num,
+    stage_num=stage_num,
+    sim_cls=partial(SimVerilated, timeout=1000000))
 
-    detected_addr | shred
-    interrupt | shred
+detected_addr | shred
+interrupt | shred
 
     # from pygears.svgen import svgen
     # from pygears.conf.registry import registry, bind
@@ -147,6 +146,6 @@ if __name__ == "__main__":
     # from pygears.sim.extens.vcd import VCD
     # sim(outdir='build', extens=[VCD])
 
-    sim(outdir='build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+    # sim(outdir='build',
+    #     check_activity=True,
+    #     extens=[partial(Gearbox, live=True, reload=True)])

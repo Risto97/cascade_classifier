@@ -3,7 +3,6 @@ from pygears.typing import Queue, Uint, Tuple, Unit
 
 from pygears.sim import sim
 from pygears.sim.modules.verilator import SimVerilated
-from gearbox import Gearbox
 from functools import partial
 
 from pygears.common import ccat, shred, dreg
@@ -64,13 +63,13 @@ def feature_addr(stage_counter: Queue[Uint['w_stage_addr'], 1], rst_in: Unit):
     return feature_cnt | dreg
 
 
-if __name__ == "__main__":
-    feature_num = 2913
-    stage_num = 25
+# if __name__ == "__main__":
+#     feature_num = 2913
+#     stage_num = 25
 
-    feature_addr(
-        feature_num=feature_num, stage_num=stage_num,
-        sim_cls=SimVerilated) | shred
-    sim(outdir='build',
-        check_activity=True,
-        extens=[partial(Gearbox, live=True, reload=True)])
+#     feature_addr(
+#         feature_num=feature_num, stage_num=stage_num,
+#         sim_cls=SimVerilated) | shred
+#     sim(outdir='build',
+#         check_activity=True,
+#         extens=[partial(Gearbox, live=True, reload=True)])
