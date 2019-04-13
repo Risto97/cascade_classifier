@@ -52,8 +52,8 @@ def weighted_sum(din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1]):
     weighted_data = weighted_data | Queue[weighted_data.dtype[0], 1]
 
     summed_data = weighted_data | accum(add_num=4)
-    summed_data = summed_data | Queue[Int[len(summed_data.dtype[0]
-                                              )], 1] | last_data
+    summed_data = summed_data | Queue[Int[len(summed_data.dtype[0])],
+                                      1] | last_data
 
     return summed_data
 
@@ -96,8 +96,28 @@ def get_stage_res(stage_addr: Queue[Uint['w_stage_addr'], 1],
 
 
 @gear
-def classifier(fb_data: Queue[Array[
-        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']]], 3],
+def rect_sum(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
+        'w_weight']]], 3],
+             *,
+             w_ii=b'w_ii',
+             w_weight=b'w_weight'):
+
+    rect_data_t = Intf(Tuple[Uint[w_ii], Uint[1], Int[w_weight]])
+    rect = []
+    for i in range(3):
+        rect_tmp = ccat(
+            fb_data[0][i],
+            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum | dreg
+        rect_tmp = rect_tmp * 4096
+        rect.append(rect_tmp)
+    rect_sum = rect[0] + rect[1] + rect[2]
+
+    return rect_sum
+
+
+@gear
+def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
+        'w_weight']]], 3],
                feat_addr: Queue[Uint['w_addr_feat'], 2],
                stage_addr: Queue[Uint['w_stage_addr'], 1],
                stddev: Uint['w_stddev'],
@@ -116,22 +136,14 @@ def classifier(fb_data: Queue[Array[
 
     stddev_repl = replicate(ccat(2913, stddev))
     stddev_repl = stddev_repl[0]
-    rect_data_t = Intf(Tuple[Uint[w_ii], Uint[1], Int[w_weight]])
-    rect = []
-    for i in range(3):
-        rect_tmp = ccat(
-            fb_data[0][i],
-            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum | dreg
-        rect_tmp = rect_tmp * 4096
-        rect.append(rect_tmp)
-    rect_sum = rect[0] + rect[1] + rect[2]
 
+    rect_sum_s = fb_data | rect_sum(w_ii=w_ii, w_weight=w_weight)
     feature_threshold = rom(
         feat_addr[0], data=featureThresholds_l, dtype=Int[w_feat_thresh])
 
     stddev_repl = stddev_repl | cart_sync_with(
-        ccat(rect_sum, 0) | Queue[rect_sum.dtype, 1])
-    res = ccat(rect_sum, feature_threshold, stddev_repl)
+        ccat(rect_sum_s, 0) | Queue[rect_sum_s.dtype, 1])
+    res = ccat(rect_sum_s, feature_threshold, stddev_repl)
 
     leaf_num = res | get_leaf_num | dreg
     leaf_val = leaf_vals(feat_addr=feat_addr, din=leaf_num)
