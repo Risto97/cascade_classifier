@@ -29,6 +29,7 @@ import math
 img_fn = "../datasets/rtl7.jpg"
 img = ImageClass()
 img.loadImage(img_fn)
+img = img.img
 img_size = img.shape
 frame_size = (25, 25)
 feature_num = 2913

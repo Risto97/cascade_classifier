@@ -16,8 +16,9 @@ TRdDin = Uint['w_addr']
 outnames = ['rd_data_if']
 
 ## change this ##
-from cascade import create_cascade
-cascade_model = create_cascade("../models/haarcascade_frontalface_default.xml")
+from cascade_classifier.python_utils.cascade import CascadeClass
+xml_file = r"../xml_models/haarcascade_frontalface_default.xml"
+cascade_model = CascadeClass(xml_file)
 
 rect_coords_l = []
 rect_weights_l = []

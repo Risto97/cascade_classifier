@@ -13,14 +13,14 @@ from pygears.cookbook.rng import rng
 
 import math
 
-from dump_hw import scaleParams
-from image import ImageClass
+from cascade_classifier.python_utils.dumpVerilog import scaleParams
+from cascade_classifier.python_utils.image import ImageClass
 ###### CHANGE  ##############
 img_fn = '../datasets/proba.pgm'
 img_fn = '../datasets/rtl7.jpg'
 img = ImageClass()
 img.loadImage(img_fn)
-scale_params = scaleParams(img, frame=(25, 25), factor=1 / 0.75)
+scale_params = scaleParams(img.img.shape, frame=(25, 25), factor=1 / 0.75)
 
 w_boundary = max(
     math.ceil(math.log(max(scale_params['boundary_y']), 2)),

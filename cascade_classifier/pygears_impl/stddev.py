@@ -6,7 +6,7 @@ from frame_sum import frame_sum
 from pygears.common.rom import rom
 from pygears.common import dreg
 
-from sqrt_approx import createSqrtApprox
+from cascade_classifier.python_utils.sqrt_approx import createSqrtApprox
 
 import math
 

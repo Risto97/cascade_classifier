@@ -25,8 +25,9 @@ w_weight_data = 3
 w_leaf = 14
 
 ## change this ##
-from cascade import create_cascade
-cascade_model = create_cascade("../models/haarcascade_frontalface_default.xml")
+from cascade_classifier.python_utils.cascade import CascadeClass
+xml_file = r"../xml_models/haarcascade_frontalface_default.xml"
+cascade_model = CascadeClass(xml_file)
 
 featureThresholds_ret = cascade_model.getFeatureThresholds()
 featureThresholds_l = featureThresholds_ret[0]
