@@ -70,6 +70,7 @@ module stddev
    sqrt_mem
      #(
        .W_DATA(W_SQRT),
+       .SQRT_DEPTH(SQRT_DEPTH),
        .W_ADDR(W_ADDR_SQRT)
        )
    sqrt_mem_i(

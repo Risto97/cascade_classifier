@@ -1,6 +1,7 @@
 module sqrt_mem
   #(
     parameter W_DATA = 16,
+    parameter SQRT_DEPTH = 256,
     parameter W_ADDR = 8
     )
    (
@@ -35,7 +36,9 @@ module sqrt_mem
             .doa(doa)
             );
 
-   sqrt_rom #(.W_DATA(W_DATA), .W_ADDR(W_ADDR))
+   sqrt_rom #(.W_DATA(W_DATA),
+              .W_ADDR(W_ADDR),
+              .DEPTH(SQRT_DEPTH))
    sqrt_rom_i(
               .clk(clk),
               .rst(rst),
