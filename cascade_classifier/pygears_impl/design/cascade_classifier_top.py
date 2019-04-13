@@ -4,11 +4,11 @@ from pygears.typing import Queue, Tuple, Uint, Union, Unit
 from ii_gen import ii_gen
 from ii_gen import sii_gen
 from img_ram import img_ram
-from rd_addrgen import rd_addrgen, addr_trans
+from rd_addrgen import rd_addrgen
 from stddev import stddev
 from frame_buffer import frame_buffer
 from classifier import classifier
-from features import features
+from features_mem import features_mem
 from addr_utils import feature_addr, stage_counter
 
 from pygears.sim import sim
@@ -19,13 +19,13 @@ from functools import partial
 from pygears.common import czip, dreg, flatten, shred
 from pygears.common.filt import qfilt
 
-from gears.yield_on_one import yield_on_one
+from gears.yield_gears import yield_on_one, yield_on_one_uint, yield_zeros_and_eot
 
 from cascade_classifier.python_utils.image import ImageClass
 
 import math
 
-img_fn = "../datasets/rtl7.jpg"
+img_fn = "../../datasets/rtl7.jpg"
 img = ImageClass()
 img.loadImage(img_fn)
 img = img.img
@@ -41,22 +41,6 @@ seq = [img.flatten(), img.flatten()]
 
 w_rect_data = 20
 w_weight_data = 3
-
-
-@gear(svgen={'compile': True})
-async def yield_on_one_uint(din: Uint[1]) -> Uint[1]:
-    async with din as data:
-        if data == 1:
-            yield data
-
-
-@gear(svgen={'compile': True})
-async def yield_zeros_and_eot(din: Queue['data_t', 1]) -> Uint[1]:
-    async for (data, eot) in din:
-        if data == 0:
-            yield data
-        elif data == 1 and eot == 1:
-            yield data
 
 
 @gear
@@ -81,8 +65,8 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
                        stage_num,
                        feature_num):
 
-    rd_addr_s, maybe_send_addr = rd_addrgen(frame_size=frame_size)
-    rd_addr_s = rd_addr_s | addr_trans(img_size=img_size)
+    rd_addr_s, maybe_send_addr = rd_addrgen(
+        img_size=img_size, frame_size=frame_size)
     img_s = img_ram(din, rd_addr_s, img_size=img_size)
 
     ii_s = img_s | ii_gen(frame_size=frame_size)
@@ -92,12 +76,9 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
 
     rst_local = Intf(Unit)
 
-    stage_cnt = stage_counter(
-        rst_in=rst_local, stage_num=stage_num)
-    rd_addr_feat = feature_addr(
-        rst_in=rst_local,
-        stage_counter=stage_cnt)
-    rect_addr = features(
+    stage_cnt = stage_counter(rst_in=rst_local, stage_num=stage_num)
+    rd_addr_feat = feature_addr(rst_in=rst_local, stage_counter=stage_cnt)
+    rect_addr = features_mem(
         rd_addr_feat,
         rst_in=rst_local,
         feature_num=feature_num,
@@ -106,8 +87,7 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
         w_weight_data=w_weight_data)
 
     fb_rd = frame_buffer(
-        ii_s | flatten, rect_addr, rst_in=rst_local,
-        frame_size=frame_size)
+        ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size)
 
     class_res = classifier(
         rst_in=rst_local,
@@ -138,14 +118,14 @@ detected_addr, interrupt = cascade_classifier(
 detected_addr | shred
 interrupt | shred
 
-    # from pygears.svgen import svgen
-    # from pygears.conf.registry import registry, bind
-    # bind('svgen/debug_intfs', [])
-    # svgen('/cascade_classifier', outdir='/tools/work/vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
+# from pygears.svgen import svgen
+# from pygears.conf.registry import registry, bind
+# bind('svgen/debug_intfs', [])
+# svgen('/cascade_classifier', outdir='/tools/work/vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
 
-    # from pygears.sim.extens.vcd import VCD
-    # sim(outdir='build', extens=[VCD])
+# from pygears.sim.extens.vcd import VCD
+# sim(outdir='build', extens=[VCD])
 
-    # sim(outdir='build',
-    #     check_activity=True,
-    #     extens=[partial(Gearbox, live=True, reload=True)])
+# sim(outdir='build',
+#     check_activity=True,
+#     extens=[partial(Gearbox, live=True, reload=True)])

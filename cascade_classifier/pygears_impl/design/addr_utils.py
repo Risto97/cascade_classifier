@@ -15,7 +15,7 @@ from pygears.common import local_rst
 import math
 
 ## change this ##
-xml_file = r"../xml_models/haarcascade_frontalface_default.xml"
+xml_file = r"../../xml_models/haarcascade_frontalface_default.xml"
 from cascade_classifier.python_utils.cascade import CascadeClass
 cascade = CascadeClass(xml_file)
 

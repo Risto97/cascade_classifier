@@ -7,7 +7,7 @@ from pygears.cookbook import release_after_eot
 from pygears.common import ccat, dreg, flatten, decoupler
 from pygears.common import local_rst
 
-from gears.queue_one_by_one import queue_one_by_one
+from pygears.cookbook import alternate_queues
 
 import math
 
@@ -25,7 +25,7 @@ def frame_buffer(din: Queue[Uint['w_din'], 1],
     #######################################
     rst_in | local_rst
 
-    din_i, rd_addr_sdp = queue_one_by_one(din, rd_addr)
+    din_i, rd_addr_sdp = alternate_queues(din, rd_addr)
     rd_addr_sdp_dreg = rd_addr_sdp | dreg
 
     cfg_rng = ccat(0, Uint[w_addr](ram_size), 1)

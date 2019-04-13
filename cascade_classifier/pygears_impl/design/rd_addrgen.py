@@ -15,8 +15,8 @@ import math
 from cascade_classifier.python_utils.dumpVerilog import scaleParams
 from cascade_classifier.python_utils.image import ImageClass
 ###### CHANGE  ##############
-img_fn = '../datasets/proba.pgm'
-img_fn = '../datasets/rtl7.jpg'
+img_fn = '../../datasets/proba.pgm'
+img_fn = '../../datasets/rtl7.jpg'
 img = ImageClass()
 img.loadImage(img_fn)
 scale_params = scaleParams(img.img.shape, frame=(25, 25), factor=1 / 0.75)
@@ -136,7 +136,7 @@ def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4],
 
 
 @gear
-def rd_addrgen(*, frame_size=(25, 25)):
+def rd_addrgen(*, img_size=(240,320), frame_size=(25, 25)):
     scale = scale_counter()
     ratio = scale_ratio(scale)
     boundary = boundaries(scale)
@@ -146,8 +146,9 @@ def rd_addrgen(*, frame_size=(25, 25)):
         scale_ratio=ratio, frame_size=frame_size) | dreg
     scaled_addr = cart(scale, hop_out) | flatten(lvl=2)
 
-    return sweep_out, scaled_addr
+    sweep_linear = sweep_out | addr_trans(img_size=img_size)
 
+    return sweep_linear, scaled_addr
 
 # if __name__ == "__main__":
 #     frame_size = (25, 25)

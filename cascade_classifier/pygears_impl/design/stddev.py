@@ -17,7 +17,6 @@ sqrt = createSqrtApprox(sqrt_addr_w, sqrt_rom_depth)
 w_sqrt = sqrt[1]
 sqrt_mem = sqrt[0]
 
-
 @gear
 def stddev(ii_s: Queue[Uint['w_ii'], 2],
            sii_s: Queue[Uint['w_sii'], 2],

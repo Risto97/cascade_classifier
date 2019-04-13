@@ -7,7 +7,6 @@ from pygears.common import ccat, add, shred, flatten, dreg
 from pygears.sim import sim
 from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
-# from gearbox import Gearbox
 from functools import partial
 
 @gear

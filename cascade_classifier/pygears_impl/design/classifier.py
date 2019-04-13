@@ -26,7 +26,7 @@ w_leaf = 14
 
 ## change this ##
 from cascade_classifier.python_utils.cascade import CascadeClass
-xml_file = r"../xml_models/haarcascade_frontalface_default.xml"
+xml_file = r"../../xml_models/haarcascade_frontalface_default.xml"
 cascade_model = CascadeClass(xml_file)
 
 featureThresholds_ret = cascade_model.getFeatureThresholds()

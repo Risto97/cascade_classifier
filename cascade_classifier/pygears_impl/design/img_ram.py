@@ -11,7 +11,7 @@ from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
 from functools import partial
 
-from gears.queue_one_by_one import queue_one_by_one
+from pygears.cookbook import alternate_queues
 
 import math
 
@@ -28,7 +28,7 @@ def img_ram(din: Queue[Uint['w_data'], 1],
     cfg_rng = ccat(0, ram_size, 1)
     wr_addr = cfg_rng | rng
 
-    din, rd_addr_sdp = queue_one_by_one(din, rd_addr)
+    din, rd_addr_sdp = alternate_queues(din, rd_addr)
     wr_sdp = ccat(wr_addr[0], din[0])
 
     rd_data = sdp(wr_sdp, rd_addr_sdp[0], depth=ram_size)
