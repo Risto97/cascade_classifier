@@ -1,9 +1,9 @@
 import math
 
 class SqrtClass(object):
-    def __init__(self):
-        self.w_din = 31
-        self.depth = 256
+    def __init__(self, w_din=31, depth=256):
+        self.w_din = w_din
+        self.depth = depth
 
     @property
     def step(self):
@@ -89,16 +89,17 @@ class SqrtClass(object):
         pass
 
 
-def createSqrtApprox(w_din, depth):
-    sqrt = SqrtClass()
-    sqrt.w_din = 31
-    sqrt.depth = 256
+def createSqrtApprox(w_din=31, depth=256):
+    sqrt = SqrtClass(w_din=31, depth=256)
 
     w_data = math.ceil(math.log(max(sqrt.lut), 2))
 
     return sqrt.lut, w_data
 
 # test = [632423816, 55374038]
+
+
+# print(createSqrtApprox(31, 256))
 
 # sqrt = SqrtClass()
 # sqrt.w_din = 31

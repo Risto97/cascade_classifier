@@ -11,36 +11,14 @@ from classifier import classifier
 from features_mem import features_mem
 from addr_utils import feature_addr, stage_counter
 
-from pygears.sim import sim
 from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
 from functools import partial
 
-from pygears.common import czip, dreg, flatten, shred
+from pygears.common import czip, flatten, shred
 from pygears.common.filt import qfilt
 
 from gears.yield_gears import yield_on_one, yield_on_one_uint, yield_zeros_and_eot
-
-from cascade_classifier.python_utils.image import ImageClass
-
-import math
-
-img_fn = "../../datasets/rtl7.jpg"
-img = ImageClass()
-img.loadImage(img_fn)
-img = img.img
-img_size = img.shape
-frame_size = (25, 25)
-feature_num = 2913
-stage_num = 25
-w_addr = math.ceil(math.log(frame_size[0] * frame_size[1], 2))
-addr_t = Queue[Uint[w_addr], 2]
-din_t = Queue[Uint[8], 1]
-
-seq = [img.flatten(), img.flatten()]
-
-w_rect_data = 20
-w_weight_data = 3
 
 
 @gear
@@ -58,36 +36,29 @@ def send_result(
 
 
 @gear
-def cascade_classifier(din: Queue[Uint['w_din'], 1],
-                       *,
-                       img_size=(240, 320),
-                       frame_size=(25, 25),
-                       stage_num,
-                       feature_num):
+def cascade_classifier(din: Queue[Uint['w_din'], 1], *, casc_hw):
 
-    rd_addr_s, maybe_send_addr = rd_addrgen(
-        img_size=img_size, frame_size=frame_size)
-    img_s = img_ram(din, rd_addr_s, img_size=img_size)
+    rd_addr_s, maybe_send_addr = rd_addrgen(casc_hw=casc_hw)
+    img_s = img_ram(din, rd_addr_s, img_size=casc_hw.img_size)
 
-    ii_s = img_s | ii_gen(frame_size=frame_size)
-    sii_s = img_s | sii_gen(frame_size=frame_size)
+    ii_s = img_s | ii_gen(frame_size=casc_hw.frame_size)
+    sii_s = img_s | sii_gen(frame_size=casc_hw.frame_size)
 
-    stddev_s = stddev(ii_s, sii_s, frame_size=frame_size)
+    stddev_s = stddev(ii_s, sii_s, casc_hw=casc_hw)
 
     rst_local = Intf(Unit)
 
-    stage_cnt = stage_counter(rst_in=rst_local, stage_num=stage_num)
-    rd_addr_feat = feature_addr(rst_in=rst_local, stage_counter=stage_cnt)
-    rect_addr = features_mem(
-        rd_addr_feat,
-        rst_in=rst_local,
-        feature_num=feature_num,
-        feature_size=frame_size,
-        w_rect_data=w_rect_data,
-        w_weight_data=w_weight_data)
+    stage_cnt = stage_counter(rst_in=rst_local, stage_num=casc_hw.stage_num)
+    rd_addr_feat = feature_addr(
+        rst_in=rst_local, stage_counter=stage_cnt, casc_hw=casc_hw)
+
+    rect_addr = features_mem(rd_addr_feat, rst_in=rst_local, casc_hw=casc_hw)
 
     fb_rd = frame_buffer(
-        ii_s | flatten, rect_addr, rst_in=rst_local, frame_size=frame_size)
+        ii_s | flatten,
+        rect_addr,
+        rst_in=rst_local,
+        frame_size=casc_hw.frame_size)
 
     class_res = classifier(
         rst_in=rst_local,
@@ -95,8 +66,7 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
         feat_addr=rd_addr_feat,
         stage_addr=stage_cnt,
         stddev=stddev_s,
-        feature_num=feature_num,
-        stage_num=stage_num)
+        casc_hw=casc_hw)
 
     detected_addr, interrupt = send_result(addr=maybe_send_addr, res=class_res)
 
@@ -105,27 +75,26 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1],
     return detected_addr, interrupt
 
 
-# if __name__ == "__main__":
+from cascade_classifier.python_utils.image import ImageClass
+from cascade_classifier.python_utils.cascade_hw import CascadeHW
+
+xml_file = r"../../xml_models/haarcascade_frontalface_default.xml"
+
+img_fn = "../../datasets/rtl7.jpg"
+img = ImageClass()
+img.loadImage(img_fn)
+img = img.img
+print(img.shape)
+
+cascade_hw = CascadeHW(xml_file, img_size=img.shape)
+
+din_t = Queue[Uint[8], 1]
+seq = [img.flatten(), img.flatten()]
 
 detected_addr, interrupt = cascade_classifier(
     din=drv(t=din_t, seq=seq),
-    img_size=img_size,
-    frame_size=frame_size,
-    feature_num=feature_num,
-    stage_num=stage_num,
+    casc_hw=cascade_hw,
     sim_cls=partial(SimVerilated, timeout=1000000))
 
 detected_addr | shred
 interrupt | shred
-
-# from pygears.svgen import svgen
-# from pygears.conf.registry import registry, bind
-# bind('svgen/debug_intfs', [])
-# svgen('/cascade_classifier', outdir='/tools/work/vivado/iprepo/cascade_classifier_pygears/build/', wrapper=True)
-
-# from pygears.sim.extens.vcd import VCD
-# sim(outdir='build', extens=[VCD])
-
-# sim(outdir='build',
-#     check_activity=True,
-#     extens=[partial(Gearbox, live=True, reload=True)])

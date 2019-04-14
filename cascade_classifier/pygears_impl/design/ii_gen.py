@@ -2,12 +2,8 @@ from pygears import gear, Intf
 from pygears.typing import Queue, Uint, bitw
 from gears.fifo2 import fifo2
 from gears.accum import accum
-from pygears.common import ccat, add, shred, flatten, dreg
+from pygears.common import add, ccat, dreg, flatten
 
-from pygears.sim import sim
-from pygears.sim.modules import drv
-from pygears.sim.modules.verilator import SimVerilated
-from functools import partial
 
 @gear
 def accum_wrap(din: Queue[Uint['w_din'], 2], *, add_num):
@@ -46,28 +42,3 @@ def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
     sii_s = sii_in | ii_gen(frame_size=frame_size)
 
     return sii_s
-
-
-# if __name__ == "__main__":
-# din_t = Queue[Uint[8], 2]
-# frame_size = (25, 25)
-# seq = []
-# for i in range(2):
-#     seq_y = []
-#     for y in range(frame_size[0]):
-#         seq_x = []
-#         for x in range(frame_size[1]):
-#             seq_x.append(x + 1)
-#         seq_y.append(seq_x)
-#     seq.append(seq_y)
-
-# sii_gen(
-#     din=drv(t=din_t, seq=seq), frame_size=frame_size,
-#     sim_cls=SimVerilated) | shred
-# ii_gen(
-#     din=drv(t=din_t, seq=seq), frame_size=frame_size,
-#     sim_cls=SimVerilated) | shred
-
-# sim(outdir='./build',
-#     check_activity=True,
-#     extens=[partial(Gearbox, live=True, reload=True)])

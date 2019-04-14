@@ -1,44 +1,17 @@
 from pygears import gear, Intf
 from pygears.typing import Array, Int, Uint, Queue, Tuple, Int, Unit
 
-from pygears.cookbook import rng
-from pygears.common import cart_sync_with, ccat, fmap, neg, shred
+from pygears.common import cart_sync_with, ccat, neg
 from pygears.common.mux import mux_valve
 from pygears.common import lt, mux_valve, union_collapse
 from pygears.common import rom, dreg
-from pygears.common import flatten
 from pygears.common import local_rst
 
 from pygears.cookbook import replicate
 
-from addr_utils import rng_cnt
 from gears.accum import accum_on_eot
 from gears.accum import accum
 from gears.queue_ops import last_data
-
-import math
-
-features_mem_t = Queue[Array[Uint['w_rect'], Uint[1], 3], 1]
-
-w_rect_data = 20
-w_weight_data = 3
-w_leaf = 14
-
-## change this ##
-from cascade_classifier.python_utils.cascade import CascadeClass
-xml_file = r"../../xml_models/haarcascade_frontalface_default.xml"
-cascade_model = CascadeClass(xml_file)
-
-featureThresholds_ret = cascade_model.getFeatureThresholds()
-featureThresholds_l = featureThresholds_ret[0]
-w_feat_thresh = featureThresholds_ret[1]
-
-leafVal0_l, w_leafVal0 = cascade_model.getLeafVals(0)
-leafVal1_l, w_leafVal1 = cascade_model.getLeafVals(1)
-w_leafVal = max(w_leafVal0, w_leafVal1)
-
-stageThreshold_l, w_stage_thresh = cascade_model.getStageThreshold()
-#################
 
 
 @gear
@@ -52,8 +25,8 @@ def weighted_sum(din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1]):
     weighted_data = weighted_data | Queue[weighted_data.dtype[0], 1]
 
     summed_data = weighted_data | accum(add_num=4)
-    summed_data = summed_data | Queue[Int[len(summed_data.dtype[0])],
-                                      1] | last_data
+    summed_data = summed_data | Queue[Int[len(summed_data.dtype[0]
+                                              )], 1] | last_data
 
     return summed_data
 
@@ -71,10 +44,17 @@ def get_leaf_num(din: Tuple[Int['w_sum'], Int['w_thr'], Uint['w_stddev']]):
 
 
 @gear
-def leaf_vals(feat_addr: Queue[Uint['w_addr_feat'], 2], din: Uint[1]):
+def leaf_vals(feat_addr: Queue[Uint['w_addr_feat'], 2], din: Uint[1], *,
+              casc_hw):
 
-    leaf0 = rom(feat_addr[0], data=leafVal0_l, dtype=Int[w_leafVal])
-    leaf1 = rom(feat_addr[0], data=leafVal1_l, dtype=Int[w_leafVal])
+    leaf0 = rom(
+        feat_addr[0],
+        data=casc_hw.leaf_vals_mem[0],
+        dtype=Int[casc_hw.w_leaf_vals])
+    leaf1 = rom(
+        feat_addr[0],
+        data=casc_hw.leaf_vals_mem[1],
+        dtype=Int[casc_hw.w_leaf_vals])
 
     sync = ccat(din, leaf0, leaf1)
     dout = mux_valve(sync[0], sync[1], sync[2]) | union_collapse
@@ -84,9 +64,11 @@ def leaf_vals(feat_addr: Queue[Uint['w_addr_feat'], 2], din: Uint[1]):
 
 @gear
 def get_stage_res(stage_addr: Queue[Uint['w_stage_addr'], 1],
-                  din: Int['w_din'], *, stage_num):
+                  din: Int['w_din'], *, casc_hw):
     stage_threshold = rom(
-        stage_addr[0], data=stageThreshold_l, dtype=Int[w_stage_thresh])
+        stage_addr[0],
+        data=casc_hw.stage_threshold_mem,
+        dtype=Int[casc_hw.w_stage_threshold])
 
     sync = ccat(din, stage_threshold)
 
@@ -96,8 +78,8 @@ def get_stage_res(stage_addr: Queue[Uint['w_stage_addr'], 1],
 
 
 @gear
-def rect_sum(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
-        'w_weight']]], 3],
+def rect_sum(fb_data: Queue[Array[
+        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']]], 3],
              *,
              w_ii=b'w_ii',
              w_weight=b'w_weight'):
@@ -116,8 +98,8 @@ def rect_sum(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
 
 
 @gear
-def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
-        'w_weight']]], 3],
+def classifier(fb_data: Queue[Array[
+        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']]], 3],
                feat_addr: Queue[Uint['w_addr_feat'], 2],
                stage_addr: Queue[Uint['w_stage_addr'], 1],
                stddev: Uint['w_stddev'],
@@ -125,8 +107,7 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
                *,
                w_ii=b'w_ii',
                w_weight=b'w_weight',
-               feature_num,
-               stage_num):
+               casc_hw):
     rst_in | local_rst
 
     stage_addr = stage_addr | dreg
@@ -139,14 +120,16 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
 
     rect_sum_s = fb_data | rect_sum(w_ii=w_ii, w_weight=w_weight)
     feature_threshold = rom(
-        feat_addr[0], data=featureThresholds_l, dtype=Int[w_feat_thresh])
+        feat_addr[0],
+        data=casc_hw.feature_threshold_mem,
+        dtype=Int[casc_hw.w_feature_threshold])
 
     stddev_repl = stddev_repl | cart_sync_with(
         ccat(rect_sum_s, 0) | Queue[rect_sum_s.dtype, 1])
     res = ccat(rect_sum_s, feature_threshold, stddev_repl)
 
     leaf_num = res | get_leaf_num | dreg
-    leaf_val = leaf_vals(feat_addr=feat_addr, din=leaf_num)
+    leaf_val = leaf_vals(feat_addr=feat_addr, din=leaf_num, casc_hw=casc_hw)
 
     stage_eot = feat_addr[1][0] | dreg
     leaf_val = ccat(leaf_val, stage_eot) | Queue[leaf_val.dtype, 1]
@@ -154,33 +137,9 @@ def classifier(fb_data: Queue[Array[Tuple[Uint['w_ii'], Uint[1], Int[
     accum_stage = leaf_val | accum_on_eot(add_num=256)
 
     stage_res = accum_stage | get_stage_res(
-        stage_addr=stage_addr, stage_num=stage_num)
+        stage_addr=stage_addr, casc_hw=casc_hw)
 
     stage_res = ccat(stage_res | dreg,
                      stage_addr[1]) | Queue[stage_res.dtype, 1]
 
     return stage_res
-
-
-# if __name__ == "__main__":
-#     from pygears.sim import sim
-#     from pygears.sim.modules import drv
-#     from pygears.sim.modules.verilator import SimVerilated
-#     from gearbox import Gearbox
-#     from functools import partial
-
-#     din_t = Queue[Tuple[Uint[19], Uint[1], Int[2]], 1]
-
-#     seq = []
-#     seq.append((805, 1, -1))
-#     seq.append((36407, 0, -1))
-#     seq.append((1273, 0, -1))
-#     seq.append((45228, 1, -1))
-
-#     seq = [seq] * 3
-
-#     weighted_sum(din=drv(t=din_t, seq=seq), sim_cls=SimVerilated) | shred
-
-#     sim(outdir='build',
-#         check_activity=True,
-#         extens=[partial(Gearbox, live=True, reload=True)])

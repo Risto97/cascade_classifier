@@ -1,53 +1,30 @@
 from pygears import gear
 
-from pygears.sim import sim
-from pygears.sim.modules.verilator import SimVerilated
-from functools import partial
-
 from pygears.typing import Tuple, Uint, Queue
-from pygears.common import cart, cart, cart_sync_with, ccat, dreg, flatten, shred, union_collapse
+from pygears.common import cart, cart, cart_sync_with, ccat, dreg, flatten, union_collapse
 from pygears.common import decoupler
 from pygears.common.mux import mux_valve
 from pygears.cookbook.rng import rng
 
 import math
 
-from cascade_classifier.python_utils.dumpVerilog import scaleParams
-from cascade_classifier.python_utils.image import ImageClass
-###### CHANGE  ##############
-img_fn = '../../datasets/proba.pgm'
-img_fn = '../../datasets/rtl7.jpg'
-img = ImageClass()
-img.loadImage(img_fn)
-scale_params = scaleParams(img.img.shape, frame=(25, 25), factor=1 / 0.75)
-
-w_boundary = max(
-    math.ceil(math.log(max(scale_params['boundary_y']), 2)),
-    math.ceil(math.log(max(scale_params['boundary_x']), 2))) + 1
-w_ratio = max(
-    math.ceil(math.log(max(scale_params['y_ratio']), 2)),
-    math.ceil(math.log(max(scale_params['x_ratio']), 2)))
-
-print(scale_params)
-#############################
-
 
 @gear
-def scale_counter():
-    cfg_scale_cnt = ccat(0, scale_params['scaleNum'], 1)
+def scale_counter(*, scale_num):
+    cfg_scale_cnt = ccat(0, scale_num, 1)
     scale_cnt = cfg_scale_cnt | rng
 
     return scale_cnt
 
 
 @gear
-def boundaries(scale_counter: Queue[Uint['w_scale'], 1]):
+def boundaries(scale_counter: Queue[Uint['w_scale'], 1], *, casc_hw):
     bound_y_param = []
-    for val in scale_params['boundary_y']:
-        bound_y_param.append(Uint[w_boundary](val + 1))
+    for val in casc_hw.boundary_y:
+        bound_y_param.append(Uint[casc_hw.w_boundary](val + 1))
     bound_x_param = []
-    for val in scale_params['boundary_x']:
-        bound_x_param.append(Uint[w_boundary](val + 1))
+    for val in casc_hw.boundary_x:
+        bound_x_param.append(Uint[casc_hw.w_boundary](val + 1))
 
     boundary_y = mux_valve(scale_counter[0], *bound_y_param) | union_collapse
     boundary_x = mux_valve(scale_counter[0], *bound_x_param) | union_collapse
@@ -59,14 +36,14 @@ def boundaries(scale_counter: Queue[Uint['w_scale'], 1]):
 
 
 @gear
-def scale_ratio(scale_counter: Queue[Uint['w_scale'], 1]):
+def scale_ratio(scale_counter: Queue[Uint['w_scale'], 1], *, casc_hw):
     y_ratio_param = []
-    for val in scale_params['y_ratio']:
-        y_ratio_param.append(Uint[w_ratio](val))
+    for val in casc_hw.y_ratio:
+        y_ratio_param.append(Uint[casc_hw.w_ratio](val))
 
     x_ratio_param = []
-    for val in scale_params['x_ratio']:
-        x_ratio_param.append(Uint[w_ratio](val))
+    for val in casc_hw.x_ratio:
+        x_ratio_param.append(Uint[casc_hw.w_ratio](val))
 
     y_ratio = mux_valve(scale_counter[0], *y_ratio_param) | union_collapse
     x_ratio = mux_valve(scale_counter[0], *x_ratio_param) | union_collapse
@@ -93,9 +70,8 @@ def hopper(hopper_cfg: Queue[Tuple[Uint['w_bound', Uint['w_bound']]], 1]):
 
 @gear
 def sweeper(hop: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
-            scale_ratio: Queue[Tuple[Uint['w_ratio'], Uint['w_ratio']], 1],
-            *,
-            frame_size=(25, 25)):
+            scale_ratio: Queue[Tuple[Uint['w_ratio'], Uint['w_ratio']], 1], *,
+            frame_size):
 
     scale_ratio = scale_ratio | cart_sync_with(hop)
 
@@ -123,9 +99,7 @@ def sweeper(hop: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
 
 
 @gear
-def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4],
-               *,
-               img_size=(240, 320)):
+def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4], *, img_size):
 
     ram_size = img_size[0] * img_size[1]
     w_addr = math.ceil(math.log(ram_size, 2))
@@ -136,28 +110,16 @@ def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4],
 
 
 @gear
-def rd_addrgen(*, img_size=(240,320), frame_size=(25, 25)):
-    scale = scale_counter()
-    ratio = scale_ratio(scale)
-    boundary = boundaries(scale)
+def rd_addrgen(*, casc_hw):
+    scale = scale_counter(scale_num=casc_hw.scale_num)
+    ratio = scale_ratio(scale, casc_hw=casc_hw)
+    boundary = boundaries(scale, casc_hw=casc_hw)
 
     hop_out = boundary | hopper | decoupler
     sweep_out = hop_out | sweeper(
-        scale_ratio=ratio, frame_size=frame_size) | dreg
+        scale_ratio=ratio, frame_size=casc_hw.frame_size) | dreg
     scaled_addr = cart(scale, hop_out) | flatten(lvl=2)
 
-    sweep_linear = sweep_out | addr_trans(img_size=img_size)
+    sweep_linear = sweep_out | addr_trans(img_size=casc_hw.img_size)
 
     return sweep_linear, scaled_addr
-
-# if __name__ == "__main__":
-#     frame_size = (25, 25)
-#     sweep_addr, scaled_addr = rd_addrgen(
-#         frame_size=frame_size, sim_cls=SimVerilated)
-
-#     sweep_addr | shred
-#     scaled_addr | shred
-
-#     sim(outdir='build',
-#         check_activity=True,
-#         extens=[partial(Gearbox, live=True, reload=True)])

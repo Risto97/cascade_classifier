@@ -48,90 +48,6 @@ class CascadeClass(object):
 
         return True
 
-    def getStageThreshold(self):
-        threshold = []
-        for stage in self.stages:
-            threshold.append(stage.stageThreshold)
-
-        max_data = max(abs(max(threshold)), abs(min(threshold)))
-        w_data = math.ceil(math.log(max_data, 2)) + 1
-
-        return threshold, w_data
-
-    def getFeatureThresholds(self):
-        threshold = []
-        for stage in self.stages:
-            for feature in stage.features:
-                threshold.append(feature.threshold)
-
-        max_data = max(abs(max(threshold)), abs(min(threshold)))
-        w_data = math.ceil(math.log(max_data, 2)) + 1
-
-        return threshold, w_data
-
-    def getLeafVals(self, leaf_num):
-        leafVal = []
-        for stage in self.stages:
-            for feature in stage.features:
-                if leaf_num == 0:
-                    leafVal.append(feature.passVal)
-                elif leaf_num == 1:
-                    leafVal.append(feature.failVal)
-
-        max_data = max(abs(max(leafVal)), abs(min(leafVal)))
-        w_data = math.ceil(math.log(max_data, 2)) + 1
-
-        return leafVal, w_data
-
-    def getRectCoords(self, rect_num):
-        max_feature_size = max(self.featureSize)
-        w_rect = math.ceil(math.log(max_feature_size, 2))
-        r = rect_num
-
-        rect_l = []
-        for s, stage in enumerate(self.stages):
-            for feature in stage.features:
-                try:
-                    A = [feature.rects[r].A['x'], feature.rects[r].A['y']]
-                    D = [feature.rects[r].D['x'], feature.rects[r].D['y']]
-                    if (A[0] > D[0] | A[1] > D[1]):
-                        print(
-                            "A is not top left corner, or D is not bottom right corner"
-                        )
-                except:
-                    A = [0, 0]
-                    D = [0, 0]
-
-                width = D[0] - A[0]
-                height = D[1] - A[1]
-
-                rect_ccat = (A[0] + A[1] * (self.featureSize[1] + 1)) << (
-                    w_rect * 2
-                )  # TODO feature_size should be +1 in cascade class
-                rect_ccat |= width << w_rect
-                rect_ccat |= height
-
-                rect_l.append(rect_ccat)
-
-        w_data = 4 * w_rect
-
-        return rect_l, w_data
-
-    def getRectWeights(self, rect_num):
-        r = rect_num
-        w_data = 3
-
-        weights_l = []
-        for s, stage in enumerate(self.stages):
-            for feature in stage.features:
-                try:
-                    weight = feature.rects[r].weight // 4096
-                except:
-                    weight = 0
-                weights_l.append(weight)
-
-        return weights_l, w_data
-
     @property
     def featuresNum(self):
         return self.stages[-1].featuresIndex[-1] + 1
@@ -144,26 +60,6 @@ class CascadeClass(object):
                 if len(feature.rects) > max_rect_count:
                     max_rect_count = len(feature.rects)
         return max_rect_count
-
-    def getFeatureStagesCount(self):
-        feature_num = []
-        accum = 0
-        for stage in self.stages:
-            accum += stage.maxWeakCount
-            feature_num.append(accum)
-
-        w_data = math.ceil(math.log(max(feature_num), 2))
-
-        data_l = []
-        for i in range(len(feature_num)):
-            if i == 0:
-                temp = (0 << w_data) | feature_num[i]
-            else:
-                temp = (feature_num[i - 1] << w_data) | feature_num[i]
-
-            data_l.append(temp)
-
-        return data_l, w_data * 2
 
 
 class StageClass(object):
