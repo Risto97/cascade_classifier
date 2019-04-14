@@ -5,65 +5,79 @@ import math
 
 
 class FrameClass(object):
-    def __init__(self):
-        frame_size = (0, 0)
-        frame = []
-        frame_ii = []
-        frame_sii = []
-        stddev = 0
-        mean = 0
+    def __init__(self, img_fn):
+        self.img = cv2.imread(img_fn, 0)
+
+    def __str__(self):
+        return f"""frame_size: {self.frame_size}
+img: {self.img}
+ii: {self.ii}
+sii: {self.sii}
+stddev: {self.stddev}
+        """
 
     def calcCV(self):
-        self.frame_ii, self.frame_sii = cv2.integral2(self.frame)
+        self.ii, self.sii = cv2.integral2(self.img)
 
-        self.frame_sii = np.delete(self.frame_sii, (0), axis=0)
-        self.frame_sii = np.delete(self.frame_sii, (0), axis=1)
-        self.frame_ii = np.delete(self.frame_ii, (0), axis=0)
-        self.frame_ii = np.delete(self.frame_ii, (0), axis=1)
+        self.sii = np.delete(self.sii, (0), axis=0)
+        self.sii = np.delete(self.sii, (0), axis=1)
+        self.ii = np.delete(self.ii, (0), axis=0)
+        self.ii = np.delete(self.ii, (0), axis=1)
 
-    def calcIntegral(self):
-        self.frame_ii = np.zeros(self.frame_size, dtype='u4')
+    def set_frame_size(self, frame_size):
+        self.img = self.img[0:frame_size[0], 0:frame_size[1]]
+
+    @property
+    def frame_size(self):
+        return self.img.shape
+
+    @property
+    def ii(self):
+        ii = np.zeros(self.frame_size, dtype='u4')
 
         for y in range(self.frame_size[0]):
             sum_row = 0
             for x in range(self.frame_size[1]):
-                sum_row += self.frame[y][x]
+                sum_row += self.img[y][x]
                 if y > 0:
-                    self.frame_ii[y][x] = sum_row + self.frame_ii[y - 1][x]
+                    ii[y][x] = sum_row + ii[y - 1][x]
                 else:
-                    self.frame_ii[y][x] = sum_row
+                    ii[y][x] = sum_row
 
-        return self.frame_ii
+        return ii
 
-    def calcSquareImage(self):
-        self.frame_sii = np.zeros(self.frame_size, dtype='u8')
-        col_sum = [0]*self.frame_size[1]
+    @property
+    def sii(self):
+        sii = np.zeros(self.frame_size, dtype='u8')
+        col_sum = [0] * self.frame_size[1]
 
         for y in range(self.frame_size[0]):
             row_sum = 0
             for x in range(self.frame_size[1]):
-                product = np.uint64(self.frame[y][x]) * np.uint64(self.frame[y][x])
+                product = np.uint64(self.img[y][x]) * np.uint64(self.img[y][x])
                 col_sum[x] += product
                 row_sum += product
                 if y == 0:
-                    self.frame_sii[y][x] = row_sum
+                    sii[y][x] = row_sum
                 else:
-                    self.frame_sii[y][x] = col_sum[x]
+                    sii[y][x] = col_sum[x]
                     if x > 0:
-                        self.frame_sii[y][x] += self.frame_sii[y][x-1]
+                        sii[y][x] += sii[y][x - 1]
 
-        return self.frame_sii
+        return sii
 
-    def calcStddev(self):
+    @property
+    def stddev(self):
         sii = np.zeros((2, 2), dtype='u8')
         feature_size = (self.frame_size[0] - 1, self.frame_size[1] - 1)
 
-        mean = self.frame_ii[0][0] + self.frame_ii[feature_size[0]][feature_size[1]] - self.frame_ii[0][feature_size[1]] - self.frame_ii[feature_size[0]][0]
+        mean = self.ii[0][0] + self.ii[feature_size[0]][feature_size[
+            1]] - self.ii[0][feature_size[1]] - self.ii[feature_size[0]][0]
 
-        sii[0][0] = self.frame_sii[0][0]
-        sii[0][1] = self.frame_sii[0][feature_size[1]]
-        sii[1][0] = self.frame_sii[feature_size[0]][0]
-        sii[1][1] = self.frame_sii[feature_size[0]][feature_size[1]]
+        sii[0][0] = self.sii[0][0]
+        sii[0][1] = self.sii[0][feature_size[1]]
+        sii[1][0] = self.sii[feature_size[0]][0]
+        sii[1][1] = self.sii[feature_size[0]][feature_size[1]]
 
         stddev = sii[1][1] - sii[0][1] - sii[1][0] + sii[0][0]
         stddev = (stddev * feature_size[0] * feature_size[1])
@@ -75,35 +89,18 @@ class FrameClass(object):
         else:
             stddev = 1
 
-        self.stddev = stddev
-        return self.stddev
+        return stddev
 
 
 if __name__ == "__main__":
     img_fn = '../datasets/proba.pgm'
 
-    img = FrameClass()
-    img.frame = cv2.imread(img_fn, 0)
-    # img.frame = img.frame[0:5, 0:5]
-    # img.frame[0] = [5, 4, 8, 2, 1]
-    # img.frame[1] = [7, 3, 5, 9, 1]
-    # img.frame[2] = [3, 2, 7, 6, 4]
-    # img.frame[3] = [4, 5, 1, 2, 9]
-    # img.frame[4] = [9, 7, 3, 7, 2]
-    img.frame_size = img.frame.shape
+    img = FrameClass(img_fn)
 
-    start_time = time.time()
-    img.calcIntegral()
-    print("--- Integral Image calc ---------------- %s ms ---" %
-          (time.time() * 1000 - start_time * 1000))
-    start_time = time.time()
-    img.calcSquareImage()
-    print("--- Square Integral Image Calc --------- %s ms ---" %
-          (time.time() * 1000 - start_time * 1000))
-    stddev = img.calcStddev()
-    print("--- Stddev calc  ------------- --------- %s ms ---" %
-          (time.time() * 1000 - start_time * 1000))
-    start_time = time.time()
-    img.calcCV()
-    print("--- OpenCV calc  ------------- --------- %s ms ---" %
-          (time.time() * 1000 - start_time * 1000))
+    for i in range(5):
+        for j in range(5):
+            img.img[i,j] = j+1 + i*5
+
+    img.set_frame_size((5,5))
+
+    print(img)
