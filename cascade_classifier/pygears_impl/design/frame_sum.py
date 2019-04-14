@@ -1,7 +1,7 @@
 from pygears import gear
 from pygears.typing import Int, Queue, Uint
 
-from gears.queue_ops import queue_head_tail
+from cascade_classifier.pygears_impl.design.gears.queue_ops import queue_head_tail
 
 
 @gear(svgen={'compile': True})

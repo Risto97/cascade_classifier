@@ -5,8 +5,11 @@ import math
 
 
 class FrameClass(object):
-    def __init__(self, img_fn):
+    def __init__(self, img_fn, frame_size=None):
         self.img = cv2.imread(img_fn, 0)
+
+        if frame_size is not None:
+            self.img = self.img[0:frame_size[0], 0:frame_size[1]]
 
     def __str__(self):
         return f"""frame_size: {self.frame_size}
@@ -26,6 +29,18 @@ stddev: {self.stddev}
 
     def set_frame_size(self, frame_size):
         self.img = self.img[0:frame_size[0], 0:frame_size[1]]
+
+    @property
+    def ii_sum(self):
+        ii, frame_size = self.ii, self.frame_size
+        return ii[0][0] + ii[frame_size[0] - 1][frame_size[1] - 1] - ii[
+            frame_size[0] - 1][0] - ii[0][frame_size[1] - 1]
+
+    @property
+    def sii_sum(self):
+        sii, frame_size = self.sii, self.frame_size
+        return sii[0][0] + sii[frame_size[0] - 1][frame_size[1] - 1] - sii[
+            frame_size[0] - 1][0] - sii[0][frame_size[1] - 1]
 
     @property
     def frame_size(self):
@@ -99,8 +114,10 @@ if __name__ == "__main__":
 
     for i in range(5):
         for j in range(5):
-            img.img[i,j] = j+1 + i*5
+            img.img[i, j] = j + 1 + i * 5
 
-    img.set_frame_size((5,5))
+    img.set_frame_size((5, 5))
 
     print(img)
+    print(img.ii_sum)
+    print(img.sii_sum)
