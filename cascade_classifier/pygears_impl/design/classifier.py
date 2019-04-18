@@ -9,9 +9,9 @@ from pygears.common import local_rst
 
 from pygears.cookbook import replicate
 
-from gears.accum import accum_on_eot
-from gears.accum import accum
-from gears.queue_ops import last_data
+from .gears.accum import accum_on_eot
+from .gears.accum import accum
+from .gears.queue_ops import last_data
 
 
 @gear

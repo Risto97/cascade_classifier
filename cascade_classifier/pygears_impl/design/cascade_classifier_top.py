@@ -1,15 +1,15 @@
 from pygears import gear, Intf
 from pygears.typing import Queue, Tuple, Uint, Union, Unit
 
-from ii_gen import ii_gen
-from ii_gen import sii_gen
-from img_ram import img_ram
-from rd_addrgen import rd_addrgen
-from stddev import stddev
-from frame_buffer import frame_buffer
-from classifier import classifier
-from features_mem import features_mem
-from addr_utils import feature_addr, stage_counter
+from .ii_gen import ii_gen
+from .ii_gen import sii_gen
+from .img_ram import img_ram
+from .rd_addrgen import rd_addrgen
+from .stddev import stddev
+from .frame_buffer import frame_buffer
+from .classifier import classifier
+from .features_mem import features_mem
+from .addr_utils import feature_addr, stage_counter
 
 from pygears.sim.modules import drv
 from pygears.sim.modules.verilator import SimVerilated
@@ -18,7 +18,7 @@ from functools import partial
 from pygears.common import czip, flatten, shred
 from pygears.common.filt import qfilt
 
-from gears.yield_gears import yield_on_one, yield_on_one_uint, yield_zeros_and_eot
+from .gears.yield_gears import yield_on_one, yield_on_one_uint, yield_zeros_and_eot
 
 
 @gear
@@ -73,28 +73,3 @@ def cascade_classifier(din: Queue[Uint['w_din'], 1], *, casc_hw):
     rst_local |= class_res | yield_on_one
 
     return detected_addr, interrupt
-
-
-from cascade_classifier.python_utils.image import ImageClass
-from cascade_classifier.python_utils.cascade_hw import CascadeHW
-
-xml_file = r"../../xml_models/haarcascade_frontalface_default.xml"
-
-img_fn = "../../datasets/rtl7.jpg"
-img = ImageClass()
-img.loadImage(img_fn)
-img = img.img
-print(img.shape)
-
-cascade_hw = CascadeHW(xml_file, img_size=img.shape)
-
-din_t = Queue[Uint[8], 1]
-seq = [img.flatten(), img.flatten()]
-
-detected_addr, interrupt = cascade_classifier(
-    din=drv(t=din_t, seq=seq),
-    casc_hw=cascade_hw,
-    sim_cls=partial(SimVerilated, timeout=1000000))
-
-detected_addr | shred
-interrupt | shred

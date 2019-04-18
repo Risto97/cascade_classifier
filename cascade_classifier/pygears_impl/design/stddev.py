@@ -1,7 +1,7 @@
 from pygears import gear
 from pygears.typing import Queue, Uint
 
-from frame_sum import frame_sum
+from .frame_sum import frame_sum
 
 from pygears.common.rom import rom
 from pygears.common import dreg
