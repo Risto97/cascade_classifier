@@ -33,7 +33,7 @@ module rect_sum
    assign dout_valid = dout_eot_reg;
 
    assign dout_data = (dout_eot_reg) ? (4096 * weight * data_accum_reg) : 0; // DELETE THIS CONDITIONAL ASSIGNMENT AFTER TEST
-   assign weight_ready = (weight_valid && dout_eot_reg) ? 1 : 0;
+   assign weight_ready = (weight_valid && dout_eot_next) ? 1 : 0;
 
    always_comb
      begin
