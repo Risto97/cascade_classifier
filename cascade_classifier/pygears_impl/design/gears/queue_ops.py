@@ -1,11 +1,6 @@
 from pygears import gear
 from pygears.typing import Queue, Uint, Int
 
-from pygears.sim import sim
-from pygears.sim.modules import drv
-from pygears.sim.modules.verilator import SimVerilated
-from functools import partial
-
 
 @gear(svgen={'compile': True})
 async def first_data(din: Queue[Uint['w_data'], 1]) -> b'Uint[w_data]':
@@ -50,23 +45,3 @@ async def pick_queue_edges(din: Queue[Uint['w_data'], 2], *,
 def queue_head_tail(din: Queue[Uint['w_data'], 2], *, w_data=b'w_data'):
     dout = din | queue_edges | pick_queue_edges
     return dout
-
-
-# if __name__ == "__main__":
-#     from pygears.common import shred
-#     seq = []
-#     for i in range(3):
-#         seq_y = []
-#         for y in range(5):
-#             seq_x = []
-#             for x in range(5):
-#                 seq_x.append(x)
-#             seq_y.append(seq_x)
-#         seq.append(seq_y)
-
-#     queue_head_tail(
-#         din=drv(t=Queue[Uint[8], 2], seq=seq), sim_cls=SimVerilated) | shred
-
-#     sim(outdir='build',
-#         check_activity=True,
-#         extens=[partial(Gearbox, live=True, reload=True)])

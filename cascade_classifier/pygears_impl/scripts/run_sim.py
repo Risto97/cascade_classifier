@@ -1,4 +1,4 @@
-from pygears.sim.modules import drv
+from pygears.cookbook.verif import drv
 from pygears.sim.modules.verilator import SimVerilated
 from functools import partial
 

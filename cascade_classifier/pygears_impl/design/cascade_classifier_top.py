@@ -11,11 +11,7 @@ from .classifier import classifier
 from .features_mem import features_mem
 from .addr_utils import feature_addr, stage_counter
 
-from pygears.sim.modules import drv
-from pygears.sim.modules.verilator import SimVerilated
-from functools import partial
-
-from pygears.common import czip, flatten, shred
+from pygears.common import czip, flatten
 from pygears.common.filt import qfilt
 
 from .gears.yield_gears import yield_on_one, yield_on_one_uint, yield_zeros_and_eot
