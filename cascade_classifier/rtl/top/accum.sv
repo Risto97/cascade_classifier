@@ -1,4 +1,3 @@
-//(* use_dsp = "yes" *)
 module accum
   #(
     parameter W_DATA_IN=8,

@@ -54,10 +54,12 @@ def dumpVerilogROM(data_l, w_addr_l, w_data_l, names, directory,
         if block_ram is True:
             print(f"\n     (* rom_style = \"block\" *)\n", file=f)
 
-        print(f"\n     logic [W_DATA-1:0] mem [DEPTH-1:0];\n", file=f)
+        print(f"\n     logic [W_DATA-1:0] mem [DEPTH-1:0];", file=f)
+        print(f"     logic [W_DATA-1:0] data_o;\n", file=f)
+        print(f"     assign doa = data_o;\n", file=f)
 
         print(f"     always_ff @(posedge clk)\n        begin\n           if(ena)",file=f)
-        print(f"              doa <= mem[addra];", file=f)
+        print(f"              data_o <= mem[addra];", file=f)
         print(f"        end\n", file=f)
 
         print(f"     initial begin", file=f)

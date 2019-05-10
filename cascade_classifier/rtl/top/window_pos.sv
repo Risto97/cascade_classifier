@@ -2,6 +2,7 @@ module window_pos
   #(
     parameter IMG_WIDTH = 45,
     parameter IMG_HEIGHT = 45,
+    parameter W_SCALE = 4,
     localparam W_X = $clog2(IMG_WIDTH),
     localparam W_Y = $clog2(IMG_HEIGHT)
     )
@@ -12,7 +13,7 @@ module window_pos
     input            window_pos_valid,
     output           window_pos_ready,
     input            window_pos_eot,
-    input [7:0]      window_pos_scale,
+    input [W_SCALE-1:0]      window_pos_scale,
     input [W_X-1:0]  window_pos_x,
     input [W_Y-1:0]  window_pos_y,
 

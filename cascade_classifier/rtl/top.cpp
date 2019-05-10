@@ -20,34 +20,35 @@ int main(int argc, char **argv, char **env){
   tfp->open ("top.vcd");
 
   top->clk = 1;
-  top-> rst = 1;
+  top->rst = 1;
   int img_done = 0;
   int x = 0;
   int y = 0;
 
-  top->img_eot = 0;
+  top->din_data = 0xFFFFF7FF & top->din_data;
 
   for(i=0; i<2000000; i++){
     top->rst = (i<2);
 
     for (clk=0; clk<2; clk++){
       if(i>3 && clk == 1){
-        top->detect_pos_ready = 1;
+        top->detected_addr_ready = 1;
+        top->interrupt_ready = 1;
 
         if(img_done == 1){
-          top->img_eot = 0;
-          top->img_valid = 0;
+          top->din_data = 0xFFFFF7FF & top->din_data;
+          top->din_valid = 0;
         }
         if(img_done == 0){
-          top->img_valid = 1;
-          top->img_data = img[y][x];
+          top->din_valid = 1;
+          top->din_data = img[y][x];
           x++;
           if(x == WIDTH){
             x = 0;
             y++;
             if(y == HEIGHT){
               y = 0;
-              top->img_eot = 1;
+              top->din_data = 0x00000100 | top->din_data;
               img_done = 1;
             }
           }

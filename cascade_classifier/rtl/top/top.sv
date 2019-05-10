@@ -5,7 +5,6 @@ module top
     parameter W_DATA = 8,
     parameter FEATURE_WIDTH = 25,
     parameter FEATURE_HEIGHT = 25,
-    parameter PARALLEL_ROWS = 1,
     localparam DATA_MAX = 2**W_DATA-1,
     localparam W_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX),
     localparam W_SII = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT*DATA_MAX*DATA_MAX),
@@ -13,19 +12,20 @@ module top
     localparam W_ADDR_II = $clog2(FEATURE_WIDTH*FEATURE_HEIGHT)
     )
    (
-    input              clk,
-    input              rst,
+    input            clk,
+    input            rst,
 
-    input              img_valid,
-    output             img_ready,
-    input [W_DATA-1:0] img_data,
-    input              img_eot,
+    input            din_valid,
+    output           din_ready,
+    input [W_DATA:0] din_data,
 
-    output             detect_interrupt,
-    output             detect_pos_valid,
-    input              detect_pos_ready,
-    output             detect_pos_eot,
-    output [31:0]      detect_pos
+    output           interrupt_data,
+    output           interrupt_valid,
+    input            interrupt_ready,
+
+    output           detected_addr_valid,
+    input            detected_addr_ready,
+    output [24:0]    detected_addr_data
    );
 
    import params::*;
@@ -33,6 +33,13 @@ module top
    localparam W_ADDR = $clog2(IMG_WIDTH*IMG_HEIGHT);
    localparam W_X = $clog2(IMG_WIDTH);
    localparam W_Y = $clog2(IMG_HEIGHT);
+
+   logic [W_DATA-1:0]  img_data;
+   logic               img_eot;
+   logic               detect_pos_eot;
+
+   assign img_data = din_data[W_DATA-1:0];
+   assign img_eot = din_data[W_DATA];
 
    logic                addr1_valid, addr1_ready, data1_valid, data1_ready;
    logic [W_ADDR-1:0]   addr1_data;
@@ -81,26 +88,16 @@ module top
    logic                 result_valid, result_ready, result;
 
    logic                 local_rst, internal_rst;
-   logic [7:0]           detect_pos_scale, window_pos_scale;
-   logic [$size(detect_pos)-$size(detect_pos_y)-$size(detect_pos_x)-$size(detect_pos_scale)-1:0] eot_filler;
+   logic [W_SCALE-1:0]           detect_pos_scale, window_pos_scale;
+   logic [$size(detected_addr_data)-$size(detect_pos_y)-$size(detect_pos_x)-$size(detect_pos_scale)-1:0] eot_filler;
    assign eot_filler = (detect_pos_eot) ? '1 : 0;
 
-   logic                                                                 detect_interrupt_reg, detect_interrupt_next;
-
-   always_ff @(posedge clk) begin
-      if(rst | img_valid) begin
-         detect_interrupt_reg <= 0;
-      end else begin
-         detect_interrupt_reg <= detect_interrupt_next;
-      end
-   end
-   assign detect_interrupt_next = (detect_pos_eot) ? 1 : detect_interrupt_reg;
-
-   assign detect_interrupt = detect_interrupt_reg & img_ready;
+   assign interrupt_data = detect_pos_eot;
+   assign interrupt_valid = detect_pos_eot & detected_addr_valid;
 
    assign local_rst = rst | internal_rst;
    assign internal_rst = (result_valid && detect_pos_eot) ? 1 : 0;
-   assign detect_pos = {eot_filler, detect_pos_scale, detect_pos_y, detect_pos_x};
+   assign detected_addr_data = {eot_filler, detect_pos_scale, detect_pos_y, detect_pos_x};
 
    image_buffer #(
                   .W_DATA(W_DATA),
@@ -110,8 +107,8 @@ module top
    img_ram(
        .clk(clk),
        .rst(local_rst),
-       .din_valid(img_valid),
-       .din_ready(img_ready),
+       .din_valid(din_valid),
+       .din_ready(din_ready),
        .din_data(img_data),
        .din_eot(img_eot),
        .addr_valid(addr1_valid),
@@ -257,7 +254,8 @@ module top
    window_pos
      #(
        .IMG_WIDTH(IMG_WIDTH),
-       .IMG_HEIGHT(IMG_HEIGHT)
+       .IMG_HEIGHT(IMG_HEIGHT),
+       .W_SCALE(W_SCALE)
        )
    window_pos_i (
                  .clk(clk),
@@ -271,8 +269,8 @@ module top
                  .result_valid(result_valid),
                  .result_ready(result_ready),
                  .result(result),
-                 .detect_pos_valid(detect_pos_valid),
-                 .detect_pos_ready(detect_pos_ready),
+                 .detect_pos_valid(detected_addr_valid),
+                 .detect_pos_ready(detected_addr_ready),
                  .detect_pos_eot(detect_pos_eot),
                  .detect_pos_scale(detect_pos_scale),
                  .detect_pos_y(detect_pos_y),

@@ -1,4 +1,3 @@
-//(* use_dsp = "yes" *)
 module add
   #(
     parameter W_DATA = 32)

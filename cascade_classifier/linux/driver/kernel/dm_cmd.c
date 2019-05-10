@@ -113,7 +113,8 @@ static struct class *cl;
 
 static irqreturn_t detect_done_isr(int irq,void*dev_id)
 {
-  /* printk("INTERRUPT OCCURED num: %d", irq); */
+  printk("INTERRUPT OCCURED num: %d", irq);
+
   read_ready = 1;
   mutex_unlock(&read_mutex);
   iowrite32(0, tp->base_addr + DATAMOVERCMD_IRQ_ENABLE_OFFSET);
@@ -203,7 +204,7 @@ static int dm_cmd_probe(struct platform_device *pdev)
   }
   else {
     printk(KERN_INFO "detect_done_init: Registered IRQ %d\n", tp->irq_num);
-}
+  }
   printk("probing done");
  error2:
   release_mem_region(tp->mem_start, tp->mem_end - tp->mem_start + 1);
@@ -296,7 +297,7 @@ static ssize_t dm_cmd_read(struct file *f, char __user *buf, size_t len, loff_t 
   length++;
   ret = copy_to_user(buf, tmp_arr, length);
   read_cnt++;
-  if((res_mem[read_cnt] & 0xFF000000) != 0){
+  if(res_mem[read_cnt-1] == 0){
     endRead = 1;
     return 0;
   }
@@ -310,10 +311,12 @@ static ssize_t dm_cmd_write(struct file *f, const char __user *buf, size_t count
     *((int*)(res_mem)+i) = 0;
   }
 
+  printk(KERN_INFO "reading mutex before");
   if(!mutex_trylock(&read_mutex)) {
     pr_alert("read_mutex: device busy!\n");
     return -EBUSY;
   }
+  printk(KERN_INFO "reading mutex after");
   iowrite32(0, tp->base_addr + DATAMOVERCMD_IRQ_ENABLE_OFFSET);
   iowrite32(img_dma_handle, tp->base_addr + DATAMOVERCMD_MM2S_ADDR_OFFSET);
   iowrite32(IMG_BUFF_SIZE, tp->base_addr + DATAMOVERCMD_MM2S_BTT_OFFSET);
@@ -413,8 +416,6 @@ static int __init dm_cmd_init(void)
 
 static void __exit dm_cmd_exit(void)
 {
-  int x = 0;
-
   platform_driver_unregister(&dm_cmd_driver);
   mutex_destroy(&read_mutex);
   cdev_del(&c_dev);
@@ -423,9 +424,6 @@ static void __exit dm_cmd_exit(void)
   unregister_chrdev_region(first, 1);
   printk(KERN_ALERT "dm_cmd exit.\n");
 
-  for(x=0; x<30; x++){
-    printk("RES: %d \n", *((int*)(res_mem)+x));
-  }
   dma_free_coherent(NULL, IMG_BUFF_SIZE, img_mem, img_dma_handle);
   dma_free_coherent(NULL, RES_BUFF_SIZE, res_mem, res_dma_handle);
   printk(KERN_INFO "dm_cmd_exit: Exit Device Module \"%s\".\n", DEVICE_NAME);

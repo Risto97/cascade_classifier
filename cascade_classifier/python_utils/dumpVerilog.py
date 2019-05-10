@@ -187,6 +187,7 @@ def dumpParamsVerilog(cascade, fn, img_size, frame, factor):
 
     f = open(fn, "w")
     parallel_rows = 1
+    w_scale = math.ceil(math.log(scaleNum,2)) + 1
     ratio_max = max(max(x_ratio), max(y_ratio))
     w_ratio = math.ceil(math.log(ratio_max, 2))
     w_ratio = 24  #### ????????????????
@@ -202,6 +203,7 @@ def dumpParamsVerilog(cascade, fn, img_size, frame, factor):
     print(f"parameter PARALLEL_ROWS = {parallel_rows};", file=f)
     print(f"parameter SCALE_NUM = {scaleNum};\n", file=f)
 
+    print(f"parameter W_SCALE = {w_scale};", file=f)
     print(f"parameter W_RATIO = {w_ratio};", file=f)
     print(f"parameter W_BOUNDARY = {w_boundary};\n", file=f)
 

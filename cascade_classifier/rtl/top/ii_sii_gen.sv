@@ -1,4 +1,3 @@
-(* use_dsp = "yes" *)
 module ii_sii_gen
   #(
     parameter W_DATA = 8,
