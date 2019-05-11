@@ -11,10 +11,10 @@ from pygears.common import dreg
 def stddev(ii_s: Queue[Uint['w_ii'], 2], sii_s: Queue[Uint['w_sii'], 2], *,
            casc_hw):
 
-    ii_sum = ii_s | frame_sum | dreg
+    ii_sum = ii_s | frame_sum
     ii_sum_squared = ii_sum[0] * ii_sum[0]
 
-    sii_sum = sii_s | frame_sum | dreg
+    sii_sum = sii_s | frame_sum
     sii_mult1 = sii_sum[0] * (casc_hw.frame_size[0] - 1)
     sii_mult2 = sii_mult1 * (casc_hw.frame_size[1] - 1)
 

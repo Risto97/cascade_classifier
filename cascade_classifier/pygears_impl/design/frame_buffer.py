@@ -44,4 +44,4 @@ def frame_buffer(din: Queue[Uint['w_din'], 1], rd_addr: Queue[
 
     dout = ccat(rd_data, rd_addr_sdp_dreg[1]) | Queue[rd_data.dtype, 3]
 
-    return dout | decoupler
+    return dout

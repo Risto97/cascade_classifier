@@ -12,12 +12,10 @@ def features_mem(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, casc_hw):
 
     rst_in | local_rst
 
-    rd_addr = rd_addr | decoupler
-
     features_data = []
     for i in range(3):
         feature = rects_mem(rd_addr_if=rd_addr[0], inst_num=i, casc_hw=casc_hw)
-        features_data.append(feature | decoupler)
+        features_data.append(feature)
 
     feature_data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[casc_hw.w_weight]])
     features_zip = czip(
@@ -43,14 +41,14 @@ def calc_rect_coords(
     width = din[1]
     height = din[0]
     A = din[2]
-    B = (A + width) | Uint[w_rect] | dreg
-    tmp = height * casc_hw.frame_size[1] | dreg
+    B = (A + width) | Uint[w_rect]
+    tmp = height * casc_hw.frame_size[1]
     D = (B + tmp) | Uint[w_rect]
 
     C = (D - width) | Uint[w_rect]
 
     sign = ccat(1, 0, 0, 1) | Array[Uint[1], 4] | serialize
-    rect_coord = ccat(A | dreg, B, C, D) | Array[Uint[w_rect], 4]
+    rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4]
     rect_coord = ccat(
         rect_coord,
         4) | Tuple[Array[Uint[w_rect], 4], Uint[3]] | active_serialize

@@ -33,7 +33,7 @@ def feature_addr(stage_counter: Queue[Uint['w_stage_addr'], 1], rst_in: Unit,
                  *, casc_hw):
     rst_in | local_rst
 
-    stage_counter = stage_counter | dreg
+    stage_counter = stage_counter
     feature_num_in_stage = stage_counter[0] | rom(
         data=casc_hw.features_stage_count_mem,
         dtype=Uint[casc_hw.w_features_stage_count])

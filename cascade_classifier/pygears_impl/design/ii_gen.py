@@ -18,7 +18,7 @@ def accum_wrap(din: Queue[Uint['w_din'], 2], *, add_num):
 def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
     fifo_depth = 2**bitw(frame_size[1])
 
-    accum_s = din | dreg | accum_wrap(add_num=frame_size[0] * frame_size[1])
+    accum_s = din | accum_wrap(add_num=frame_size[0] * frame_size[1])
 
     fifo_out = Intf(accum_s.dtype[0])
 
@@ -31,12 +31,11 @@ def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
 
     ii_s = fifo_in
 
-    return ii_s | dreg
+    return ii_s
 
 
 @gear
 def sii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
-    din = din | dreg
     mult_s = din[0] * din[0]
     sii_in = ccat(mult_s, din[1]) | Queue[mult_s.dtype, 2]
     sii_s = sii_in | ii_gen(frame_size=frame_size)

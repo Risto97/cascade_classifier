@@ -95,7 +95,7 @@ def sweeper(hop: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
 
     dout = ccat(dout[0][1], dout_eot) | Queue[dout.dtype[0][1], 4]
 
-    return dout | decoupler
+    return dout
 
 
 @gear
@@ -115,9 +115,9 @@ def rd_addrgen(*, casc_hw):
     ratio = scale_ratio(scale, casc_hw=casc_hw)
     boundary = boundaries(scale, casc_hw=casc_hw)
 
-    hop_out = boundary | hopper | decoupler
+    hop_out = boundary | hopper
     sweep_out = hop_out | sweeper(
-        scale_ratio=ratio, frame_size=casc_hw.frame_size) | dreg
+        scale_ratio=ratio, frame_size=casc_hw.frame_size)
     scaled_addr = cart(scale, hop_out) | flatten(lvl=2)
 
     sweep_linear = sweep_out | addr_trans(img_size=casc_hw.img_size)

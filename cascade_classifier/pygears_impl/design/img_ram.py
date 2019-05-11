@@ -27,4 +27,4 @@ def img_ram(din: Queue[Uint['w_data'], 1],
 
     dout = ccat(rd_data, rd_addr[1] | dreg) | Queue[rd_data.dtype, 2]
 
-    return dout | dreg
+    return dout
