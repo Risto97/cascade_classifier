@@ -5,6 +5,7 @@ from pygears.common import ccat, dreg
 from pygears.common import cart_sync_with
 from pygears.common.rom import rom
 from pygears.cookbook import rng
+from pygears.common import dreg as dreg_sp
 
 from pygears.common import local_rst
 
@@ -25,7 +26,7 @@ def stage_counter(rst_in: Unit, *, stage_num):
     rst_in | local_rst
     stage_cnt = rng_cnt(cnt_num=stage_num)
 
-    return stage_cnt
+    return stage_cnt | dreg_sp
 
 
 @gear

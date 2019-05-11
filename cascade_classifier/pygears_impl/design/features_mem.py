@@ -1,8 +1,11 @@
 from pygears import gear, Intf
 from pygears.typing import Uint, Queue, Array, Tuple, Int, Unit
 
-from pygears.common import cart, ccat, czip, decoupler, dreg, local_rst, rom
+from pygears.common import cart, ccat, czip, dreg, local_rst, rom
 from pygears.common.serialize import serialize, active_serialize
+from pygears.common import decoupler as decoupler_sp
+from pygears.common import dreg as dreg_sp
+from pygears.cookbook import replicate
 
 
 @gear
@@ -11,11 +14,12 @@ def features_mem(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, casc_hw):
     w_rect = casc_hw.w_rect_data // 2
 
     rst_in | local_rst
+    rd_addr = rd_addr | decoupler_sp
 
     features_data = []
     for i in range(3):
         feature = rects_mem(rd_addr_if=rd_addr[0], inst_num=i, casc_hw=casc_hw)
-        features_data.append(feature)
+        features_data.append(feature | decoupler_sp)
 
     feature_data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[casc_hw.w_weight]])
     features_zip = czip(
@@ -36,19 +40,18 @@ def calc_rect_coords(
         w_meas=b'w_meas',
         w_rect=b'w_rect',
         casc_hw):
-    assert (w_meas * 2 == w_rect)  # Not really...
 
     width = din[1]
     height = din[0]
     A = din[2]
-    B = (A + width) | Uint[w_rect]
-    tmp = height * casc_hw.frame_size[1]
+    B = (A + width) | Uint[w_rect] | dreg_sp
+    tmp = height * casc_hw.frame_size[1] | dreg_sp
     D = (B + tmp) | Uint[w_rect]
 
-    C = (D - width) | Uint[w_rect]
+    C = (D - (width | dreg_sp)) | Uint[w_rect]
 
     sign = ccat(1, 0, 0, 1) | Array[Uint[1], 4] | serialize
-    rect_coord = ccat(A, B, C, D) | Array[Uint[w_rect], 4]
+    rect_coord = ccat(A | dreg_sp, B, C, D) | Array[Uint[w_rect], 4]
     rect_coord = ccat(
         rect_coord,
         4) | Tuple[Array[Uint[w_rect], 4], Uint[3]] | active_serialize

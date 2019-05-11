@@ -2,7 +2,8 @@ from pygears import gear
 
 from pygears.typing import Tuple, Uint, Queue
 from pygears.common import cart, cart, cart_sync_with, ccat, dreg, flatten, union_collapse
-from pygears.common import decoupler
+from pygears.common import decoupler as decoupler_sp
+from pygears.common import dreg as dreg_sp
 from pygears.common.mux import mux_valve
 from pygears.cookbook.rng import rng
 
@@ -85,17 +86,17 @@ def sweeper(hop: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
         | cart_sync_with(sweep_y)
     sweep_x = cfg_sweep_x | rng(cnt_steps=True)
     ratio_x = ratio_y | cart_sync_with(sweep_x)
-    scaled_x = ((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0]
-    sweep_x = ccat(scaled_x, sweep_x[1]) | Queue[sweep_x.dtype[0], 1]
+    scaled_x = ((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0] | dreg_sp
+    sweep_x = ccat(scaled_x, sweep_x[1] | dreg_sp) | Queue[sweep_x.dtype[0], 1]
 
-    dout = cart(sweep_y, sweep_x)
+    dout = cart(sweep_y | dreg_sp, sweep_x )
     dout = cart(hop | flatten, dout)
 
-    dout_eot = ccat(dout[1], ratio_x[1]) | Uint[4]
+    dout_eot = ccat(dout[1], ratio_x[1] | dreg_sp) | Uint[4]
 
     dout = ccat(dout[0][1], dout_eot) | Queue[dout.dtype[0][1], 4]
 
-    return dout
+    return dout | decoupler_sp
 
 
 @gear
@@ -115,7 +116,7 @@ def rd_addrgen(*, casc_hw):
     ratio = scale_ratio(scale, casc_hw=casc_hw)
     boundary = boundaries(scale, casc_hw=casc_hw)
 
-    hop_out = boundary | hopper
+    hop_out = boundary | hopper | decoupler_sp
     sweep_out = hop_out | sweeper(
         scale_ratio=ratio, frame_size=casc_hw.frame_size)
     scaled_addr = cart(scale, hop_out) | flatten(lvl=2)

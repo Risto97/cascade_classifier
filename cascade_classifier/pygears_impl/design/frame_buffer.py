@@ -3,8 +3,9 @@ from pygears.typing import Queue, Uint, Array, Int, Tuple, Unit
 
 from pygears.cookbook import sdp
 from pygears.cookbook.rng import rng
-from pygears.common import ccat, decoupler, dreg
+from pygears.common import ccat, dreg
 from pygears.common import local_rst
+from pygears.common import decoupler as decoupler_sp
 
 from pygears.cookbook import alternate_queues
 
@@ -44,4 +45,4 @@ def frame_buffer(din: Queue[Uint['w_din'], 1], rd_addr: Queue[
 
     dout = ccat(rd_data, rd_addr_sdp_dreg[1]) | Queue[rd_data.dtype, 3]
 
-    return dout
+    return dout | decoupler_sp

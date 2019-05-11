@@ -5,6 +5,7 @@ from pygears.common import cart_sync_with, ccat, neg
 from pygears.common.mux import mux_valve
 from pygears.common import lt, mux_valve, union_collapse
 from pygears.common import rom, dreg
+from pygears.common import  dreg as dreg_sp
 from pygears.common import local_rst
 
 from pygears.cookbook import replicate
@@ -33,10 +34,11 @@ def weighted_sum(din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1]):
 
 @gear
 def get_leaf_num(din: Tuple[Int['w_sum'], Int['w_thr'], Uint['w_stddev']]):
+    din = din | dreg_sp
     thresh_norm = din[2] * din[1]
-    thresh_norm = thresh_norm | Int[len(thresh_norm.dtype)]
+    thresh_norm = thresh_norm | Int[len(thresh_norm.dtype)] | dreg_sp
 
-    dout = lt(ccat(din[0], thresh_norm))
+    dout = lt(ccat(din[0] | dreg_sp, thresh_norm))
 
     return dout
 
@@ -87,7 +89,7 @@ def rect_sum(fb_data: Queue[Array[
     for i in range(3):
         rect_tmp = ccat(
             fb_data[0][i],
-            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum
+            fb_data[1][0]) | Queue[rect_data_t.dtype, 1] | weighted_sum | dreg_sp
         rect_tmp = rect_tmp * 4096
         rect.append(rect_tmp)
     rect_sum = rect[0] + rect[1] + rect[2]
@@ -110,8 +112,8 @@ def classifier(fb_data: Queue[Array[
 
     stage_addr = stage_addr | dreg
     stddev = stddev | dreg
-    # fb_data = fb_data | dreg
-    feat_addr = feat_addr | dreg
+    # fb_data = fb_data | dreg_sp
+    feat_addr = feat_addr | dreg | dreg_sp
 
     stddev_repl = replicate(ccat(5000, stddev))
     stddev_repl = stddev_repl[0]
@@ -126,10 +128,10 @@ def classifier(fb_data: Queue[Array[
         ccat(rect_sum_s, 0) | Queue[rect_sum_s.dtype, 1])
     res = ccat(rect_sum_s, feature_threshold, stddev_repl)
 
-    leaf_num = res | get_leaf_num
+    leaf_num = res | get_leaf_num | dreg_sp
     leaf_val = leaf_vals(feat_addr=feat_addr, din=leaf_num, casc_hw=casc_hw)
 
-    stage_eot = feat_addr[1][0]
+    stage_eot = feat_addr[1][0] | dreg_sp
     leaf_val = ccat(leaf_val, stage_eot) | Queue[leaf_val.dtype, 1]
 
     accum_stage = leaf_val | accum_on_eot(add_num=256)
@@ -137,6 +139,6 @@ def classifier(fb_data: Queue[Array[
     stage_res = accum_stage | get_stage_res(
         stage_addr=stage_addr, casc_hw=casc_hw)
 
-    stage_res = ccat(stage_res, stage_addr[1]) | Queue[stage_res.dtype, 1]
+    stage_res = ccat(stage_res | dreg_sp, stage_addr[1]) | Queue[stage_res.dtype, 1]
 
     return stage_res

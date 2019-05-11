@@ -4,6 +4,7 @@ from pygears.typing import Queue, Uint
 from pygears.cookbook import sdp
 from pygears.cookbook.rng import rng
 from pygears.common import ccat, dreg
+from pygears.common import dreg as dreg_sp
 
 from pygears.cookbook import alternate_queues
 
@@ -27,4 +28,4 @@ def img_ram(din: Queue[Uint['w_data'], 1],
 
     dout = ccat(rd_data, rd_addr[1] | dreg) | Queue[rd_data.dtype, 2]
 
-    return dout
+    return dout | dreg_sp
