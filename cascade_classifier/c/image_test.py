@@ -9,16 +9,11 @@ libname = 'cascade.so'
 libdir = './'
 lib = ctl.load_library(libname, libdir)
 
-# filenames = [img for img in glob.glob("../datasets/thesis/rotated.jpg")]
 filenames = [img for img in glob.glob("../datasets/testset/resized/*.jpg")]
-# filenames = [img for img in glob.glob("../datasets/rtl7.jpg")]
-img_num = len(filenames)
+img_num = 0
 
 en_hit_stat = 1
-
-# img_fn = '../datasets/proba3.pgm'
-stop_time = 0
-exec_time = 0
+stop_time, exec_time = 0, 0
 
 detect = lib.detect
 detect.argtypes = [
@@ -58,10 +53,13 @@ for img_index, img_fn in enumerate(filenames):
     # np.set_printoptions(suppress=True)
     # print(hit)
 
-    print("--- Inference Time --------- %s ms ---" % (stop_time*1000 - start_time*1000) )
+    img_num += 1
+    print(f"---{img_num} Inference Time --------- %s ms ---" % (stop_time*1000 - start_time*1000) )
     # cv2.imwrite(f'../datasets/thesis/rotated_res.jpg', img_clr)
     cv2.imshow('img', img_clr)
-    cv2.waitKey(0)
+    c = cv2.waitKey(0)
+    if c == 27:
+        break
     cv2.destroyAllWindows()
 
 print("--- TOTAl Time --------- %s s ---" % (exec_time))
