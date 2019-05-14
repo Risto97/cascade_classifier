@@ -11,6 +11,7 @@ extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
                       int src_height,
                       int src_width,
                       uint16_t subwindows[1000],
+                      uint16_t factors[1000],
                       int en_hit_stat,
                       float hit[26],
                       float scaleFactor
@@ -28,6 +29,7 @@ extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
   int img_height = src_height;
   int img_width = src_width;
   float factor = 1;
+  int scale_num = 0;
   int64_t stddev = 0;
   int result = 0;
 
@@ -46,15 +48,13 @@ extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
         calcIntegralImages(img_scaled, x, y, img_ii, img_sii);
         stddev = calcStddev(img_sii, img_ii);
         result = detectFrame(img_ii, stddev, en_hit_stat);
-        // if(result == 0){
-        //   x = x+10;
-        // }
         if(result == stageNum){
           // std::cout << "y: " << int(y*factor) << " x: " << int(x*factor) << "\n";
           subwindows[number_of_boxes*4]   = int(x*factor);
           subwindows[number_of_boxes*4+1] = int(y*factor);
           subwindows[number_of_boxes*4+2] = int((FRAME_WIDTH-1)*factor);
           subwindows[number_of_boxes*4+3] = int((FRAME_HEIGHT-1)*factor);
+          factors[number_of_boxes] = scale_num;
           number_of_boxes++;
         }
       }
@@ -63,6 +63,7 @@ extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
     img_height = src_height / factor;
     img_width = src_width / factor;
     imageScaler(img_orig, img_scaled, src_height, src_width, factor);
+    scale_num++;
   }
 
   if(en_hit_stat)
@@ -109,33 +110,33 @@ int stageRes(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
 int featureRes(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
                int feature_num,
                int64_t stddev){
+  int64_t sum0 = 0;
   int64_t sum1 = 0;
   int64_t sum2 = 0;
-  int64_t sum3 = 0;
   int64_t sum = 0;
 
-  sum1 += ii[rect0[feature_num][0][1]][rect0[feature_num][0][0]] +
+  sum0 += ii[rect0[feature_num][0][1]][rect0[feature_num][0][0]] +
           ii[rect0[feature_num][3][1]][rect0[feature_num][3][0]] -
           ii[rect0[feature_num][2][1]][rect0[feature_num][2][0]] -
           ii[rect0[feature_num][1][1]][rect0[feature_num][1][0]];
-  sum1 *= weight0[feature_num];
+  sum0 *= weight0[feature_num];
 
-  sum2 += ii[rect1[feature_num][0][1]][rect1[feature_num][0][0]] +
+  sum1 += ii[rect1[feature_num][0][1]][rect1[feature_num][0][0]] +
           ii[rect1[feature_num][3][1]][rect1[feature_num][3][0]] -
           ii[rect1[feature_num][2][1]][rect1[feature_num][2][0]] -
           ii[rect1[feature_num][1][1]][rect1[feature_num][1][0]];
-  sum2 *= weight1[feature_num];
+  sum1 *= weight1[feature_num];
 
   if(weight2[feature_num] != 0){
-    sum3 += ii[rect2[feature_num][0][1]][rect2[feature_num][0][0]] +
+    sum2 += ii[rect2[feature_num][0][1]][rect2[feature_num][0][0]] +
             ii[rect2[feature_num][3][1]][rect2[feature_num][3][0]] -
             ii[rect2[feature_num][2][1]][rect2[feature_num][2][0]] -
             ii[rect2[feature_num][1][1]][rect2[feature_num][1][0]];
-    sum3 *= weight2[feature_num];
+    sum2 *= weight2[feature_num];
   }
-  else sum3 = 0;
+  else sum2 = 0;
 
-  sum = sum1 + sum2 + sum3;
+  sum = sum0 + sum1 + sum2;
 
   if(sum >= featureThresholds[feature_num] * stddev) return passVal[feature_num];
   else return failVal[feature_num];

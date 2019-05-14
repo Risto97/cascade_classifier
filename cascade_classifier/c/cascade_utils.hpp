@@ -5,13 +5,14 @@
 #include "image_utils.hpp"
 
 extern "C" int detect(uint8_t img[IMG_HEIGHT*IMG_WIDTH],
-                       int src_height,
-                       int src_width,
-                       uint16_t subwindows[1000],
+                      int src_height,
+                      int src_width,
+                      uint16_t subwindows[1000],
+                      uint16_t factors[1000],
                       int en_hit_stat,
-                       float hit[26],
-                       float scaleFactor
-                       );
+                      float hit[26],
+                      float scaleFactor
+                      );
 
 int detectFrame(uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH],
                 int64_t stddev,

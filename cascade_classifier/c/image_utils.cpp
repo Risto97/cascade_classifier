@@ -77,18 +77,12 @@ uint32_t getSqrt(uint64_t num){
 
 int64_t calcStddev(uint64_t sii[FRAME_HEIGHT][FRAME_WIDTH],
                    uint64_t ii[FRAME_HEIGHT][FRAME_WIDTH]){
-
-  uint64_t sii_buff[2][2];
   int64_t stddev = 0;
   int64_t mean = 0;
 
   mean = ii[0][0] + ii[FRAME_HEIGHT-1][FRAME_WIDTH-1] - ii[0][FRAME_WIDTH-1] - ii[FRAME_HEIGHT-1][0];
-  sii_buff[0][0] = sii[0][0];
-  sii_buff[0][1] = sii[0][FRAME_WIDTH-1];
-  sii_buff[1][0] = sii[FRAME_HEIGHT-1][0];
-  sii_buff[1][1] = sii[FRAME_HEIGHT-1][FRAME_WIDTH-1];
+  stddev = sii[FRAME_HEIGHT-1][FRAME_WIDTH-1] + sii[0][0] - sii[0][FRAME_WIDTH-1] - sii[FRAME_HEIGHT-1][0];
 
-  stddev = sii_buff[1][1] + sii_buff[0][0] - sii_buff[0][1] - sii_buff[1][0];
   stddev = (stddev * (FRAME_WIDTH-1)*(FRAME_HEIGHT-1));
   stddev = stddev - (mean*mean);
 
