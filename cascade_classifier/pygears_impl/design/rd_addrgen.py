@@ -1,11 +1,11 @@
 from pygears import gear
 
 from pygears.typing import Tuple, Uint, Queue
-from pygears.common import cart, cart, cart_sync_with, ccat, dreg, flatten, union_collapse
-from pygears.common import decoupler as decoupler_sp
-from pygears.common import dreg as dreg_sp
-from pygears.common.mux import mux_valve
-from pygears.cookbook.rng import rng
+from pygears.lib import cart, cart, cart_sync_with, ccat, dreg, flatten, union_collapse
+from pygears.lib import decoupler as decoupler_sp
+from pygears.lib import dreg as dreg_sp
+from pygears.lib.mux import mux_valve
+from pygears.lib.rng import rng
 
 import math
 
@@ -56,7 +56,7 @@ def scale_ratio(scale_counter: Queue[Uint['w_scale'], 1], *, casc_hw):
 
 
 @gear
-def hopper(hopper_cfg: Queue[Tuple[Uint['w_bound', Uint['w_bound']]], 1]):
+def hopper(hopper_cfg):
     cfg_hop_y = ccat(0, hopper_cfg[0][0], 1)
     hop_y = cfg_hop_y | rng
 
@@ -86,13 +86,13 @@ def sweeper(hop: Queue[Tuple[Uint['w_y'], Uint['w_x']], 2],
         | cart_sync_with(sweep_y)
     sweep_x = cfg_sweep_x | rng(cnt_steps=True)
     ratio_x = ratio_y | cart_sync_with(sweep_x)
-    scaled_x = ((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0] | dreg_sp
-    sweep_x = ccat(scaled_x, sweep_x[1] | dreg_sp) | Queue[sweep_x.dtype[0], 1]
+    scaled_x = ((sweep_x[0] * ratio_x[0][1]) >> 16) | sweep_x.dtype[0] | decoupler_sp
+    sweep_x = ccat(scaled_x, sweep_x[1] | decoupler_sp) | Queue[sweep_x.dtype[0], 1]
 
-    dout = cart(sweep_y | dreg_sp, sweep_x )
+    dout = cart(sweep_y | decoupler_sp, sweep_x )
     dout = cart(hop | flatten, dout)
 
-    dout_eot = ccat(dout[1], ratio_x[1] | dreg_sp) | Uint[4]
+    dout_eot = ccat(dout[1], ratio_x[1] | decoupler_sp) | Uint[4]
 
     dout = ccat(dout[0][1], dout_eot) | Queue[dout.dtype[0][1], 4]
 
@@ -112,6 +112,7 @@ def addr_trans(din: Queue[Tuple[Uint['w_y'], Uint['w_x']], 4], *, img_size):
 
 @gear
 def rd_addrgen(*, casc_hw):
+    # import pdb; pdb.set_trace();
     scale = scale_counter(scale_num=casc_hw.scale_num)
     ratio = scale_ratio(scale, casc_hw=casc_hw)
     boundary = boundaries(scale, casc_hw=casc_hw)

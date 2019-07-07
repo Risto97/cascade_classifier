@@ -5,14 +5,15 @@ from pygears.typing import Queue, Uint, Unit
 def yield_on_one(din: Queue[Uint[1], 1]) -> Unit:
     pass
 
-@gear(svgen={'compile': True})
+
+@gear(hdl={'compile': True, 'inline_conditions': True})
 async def yield_on_one_uint(din: Uint[1]) -> Uint[1]:
     async with din as data:
         if data == 1:
             yield data
 
 
-@gear(svgen={'compile': True})
+@gear(hdl={'compile': True, 'inline_conditions': True})
 async def yield_zeros_and_eot(din: Queue['data_t', 1]) -> Uint[1]:
     async for (data, eot) in din:
         if data == 0:

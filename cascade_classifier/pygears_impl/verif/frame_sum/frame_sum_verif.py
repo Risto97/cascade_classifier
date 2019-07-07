@@ -4,10 +4,11 @@ from cascade_classifier.pygears_impl.design.ii_gen import ii_gen, sii_gen
 from cascade_classifier.pygears_impl.design.frame_sum import frame_sum
 
 from pygears.typing import Queue, Uint
-from pygears.cookbook.verif import directed
+from pygears.lib.verif import directed
 from pygears.sim import sim
-from pygears.sim.modules.drv import drv
+from pygears.lib.verif import drv
 from pygears.sim.modules.verilator import SimVerilated
+from pygears.lib import shred
 
 img_fn = '../../../datasets/proba.pgm'
 
@@ -27,3 +28,5 @@ directed(
     f=frame_sum( sim_cls=SimVerilated),
     ref=ref_sii)
 sim(outdir="build")
+
+# frame_sum(din=drv(t=Queue[Uint[32], 2], seq=seq_ii), sim_cls=SimVerilated) | shred

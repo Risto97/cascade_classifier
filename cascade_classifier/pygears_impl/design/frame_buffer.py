@@ -1,13 +1,13 @@
 from pygears import gear
 from pygears.typing import Queue, Uint, Array, Int, Tuple, Unit
 
-from pygears.cookbook import sdp
-from pygears.cookbook.rng import rng
-from pygears.common import ccat, dreg
-from pygears.common import local_rst
-from pygears.common import decoupler as decoupler_sp
+from pygears.lib import sdp
+from pygears.lib.rng import rng
+from pygears.lib import ccat, dreg
+from pygears.lib import local_rst
+from pygears.lib import decoupler as decoupler_sp
 
-from pygears.cookbook import alternate_queues
+from pygears.lib import alternate_queues
 
 import math
 

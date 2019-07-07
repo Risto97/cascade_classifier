@@ -1,14 +1,14 @@
 from pygears import gear, Intf
 from pygears.typing import Array, Int, Uint, Queue, Tuple, Int, Unit
 
-from pygears.common import cart_sync_with, ccat, neg
-from pygears.common.mux import mux_valve
-from pygears.common import lt, mux_valve, union_collapse
-from pygears.common import rom, dreg
-from pygears.common import  dreg as dreg_sp
-from pygears.common import local_rst
+from pygears.lib import cart_sync_with, ccat, neg
+from pygears.lib.mux import mux_valve
+from pygears.lib import lt, mux_valve, union_collapse
+from pygears.lib import rom, dreg
+from pygears.lib import  dreg as dreg_sp
+from pygears.lib import local_rst
 
-from pygears.cookbook import replicate
+from pygears.lib import replicate
 
 from .gears.accum import accum_on_eot
 from .gears.accum import accum
@@ -79,7 +79,7 @@ def get_stage_res(stage_addr: Queue[Uint['w_stage_addr'], 1],
 
 @gear
 def rect_sum(fb_data: Queue[Array[
-        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']]], 3],
+        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 3], 3],
              *,
              w_ii=b'w_ii',
              w_weight=b'w_weight'):
@@ -99,7 +99,7 @@ def rect_sum(fb_data: Queue[Array[
 
 @gear
 def classifier(fb_data: Queue[Array[
-        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']]], 3],
+        Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 3], 3],
                feat_addr: Queue[Uint['w_addr_feat'], 2],
                stage_addr: Queue[Uint['w_stage_addr'], 1],
                stddev: Uint['w_stddev'],

@@ -3,7 +3,7 @@ from pygears.typing import Queue, Uint
 import math
 
 
-@gear(svgen={'compile': True})
+@gear(hdl={'compile': True, 'inline_conditions': True})
 async def accum(din: Queue['data_t', 1],
                 *,
                 add_num,
@@ -16,7 +16,7 @@ async def accum(din: Queue['data_t', 1],
         yield (acc, eot)
 
 
-@gear(svgen={'compile': True})
+@gear(hdl={'compile': True, 'inline_conditions': True})
 async def accum_on_eot(
         din: Queue['data_t', 1],
         *,
@@ -29,7 +29,7 @@ async def accum_on_eot(
     yield acc
 
 
-@gear(svgen={'compile': True})
+@gear(hdl={'compile': True, 'inline_conditions': True})
 async def accum_when_eot(
         din: Queue['data_t', 2],
         *,

@@ -2,8 +2,8 @@ from pygears import gear, Intf
 from pygears.typing import Queue, Uint, bitw
 from cascade_classifier.pygears_impl.design.gears.fifo2 import fifo2
 from cascade_classifier.pygears_impl.design.gears.accum import accum
-from pygears.common import add, ccat, flatten
-from pygears.common import dreg as dreg_sp
+from pygears.lib import add, ccat, flatten
+from pygears.lib import dreg as dreg_sp
 
 
 @gear

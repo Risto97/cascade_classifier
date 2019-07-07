@@ -1,11 +1,11 @@
 from pygears import gear, Intf
 from pygears.typing import Uint, Queue, Array, Tuple, Int, Unit
 
-from pygears.common import cart, ccat, czip, dreg, local_rst, rom
-from pygears.common.serialize import serialize, active_serialize
-from pygears.common import decoupler as decoupler_sp
-from pygears.common import dreg as dreg_sp
-from pygears.cookbook import replicate
+from pygears.lib import cart, ccat, czip, dreg, local_rst, rom
+from pygears.lib.serialize import serialize, active_serialize
+from pygears.lib import decoupler as decoupler_sp
+from pygears.lib import dreg as dreg_sp
+from pygears.lib import replicate
 
 
 @gear
@@ -33,7 +33,7 @@ def features_mem(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, casc_hw):
     return dout
 
 
-@gear(svgen={'compile': True})
+@gear(hdl={'compile': True, 'inline_conditions': True})
 def calc_rect_coords(
         din: Tuple[Uint['w_meas'], Uint['w_meas'], Uint['w_rect']],
         *,

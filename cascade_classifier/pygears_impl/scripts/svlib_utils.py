@@ -13,7 +13,7 @@ def copy_svlib():
         for r, d, f in os.walk(lib):
             for file in f:
                 if file.endswith('.sv'):
-                    if not file.endswith('decoupler2.sv'):
+                    if (not file.endswith('decoupler2.sv')) and (not file.endswith('dti_spy.sv')):
                         sv_files.append(os.path.join(r, file))
 
     if not os.path.exists(svlib_dir):

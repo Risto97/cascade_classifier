@@ -3,8 +3,8 @@ from pygears.typing import Queue, Uint
 
 from .frame_sum import frame_sum
 
-from pygears.common.rom import rom
-from pygears.common import dreg as dreg_sp
+from pygears.lib.rom import rom
+from pygears.lib import dreg as dreg_sp
 
 
 @gear

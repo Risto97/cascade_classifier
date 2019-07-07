@@ -1,12 +1,12 @@
 from pygears import gear
 from pygears.typing import Queue, Uint
 
-from pygears.cookbook import sdp
-from pygears.cookbook.rng import rng
-from pygears.common import ccat, dreg
-from pygears.common import dreg as dreg_sp
+from pygears.lib import sdp
+from pygears.lib.rng import rng
+from pygears.lib import ccat, dreg
+from pygears.lib import dreg as dreg_sp
 
-from pygears.cookbook import alternate_queues
+from pygears.lib import alternate_queues
 
 
 @gear

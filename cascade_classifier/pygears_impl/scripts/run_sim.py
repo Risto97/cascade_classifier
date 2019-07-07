@@ -1,10 +1,10 @@
-from pygears.cookbook.verif import drv
+from pygears.lib.verif import drv
 from pygears.sim.modules.verilator import SimVerilated
 from functools import partial
 
 from pygears.typing import Queue, Tuple, Uint, Union, Unit
 from cascade_classifier.pygears_impl.design import cascade_classifier
-from pygears.common import shred
+from pygears.lib import shred
 
 from cascade_classifier.python_utils.image import ImageClass
 from cascade_classifier.python_utils.cascade_hw import CascadeHW

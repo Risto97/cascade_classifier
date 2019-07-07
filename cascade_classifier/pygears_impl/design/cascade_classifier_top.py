@@ -11,8 +11,8 @@ from .classifier import classifier
 from .features_mem import features_mem
 from .addr_utils import feature_addr, stage_counter
 
-from pygears.common import czip, flatten
-from pygears.common.filt import qfilt
+from pygears.lib import czip, flatten
+from pygears.lib.filt import filt
 
 from .gears.yield_gears import yield_on_one, yield_on_one_uint, yield_zeros_and_eot
 
@@ -25,7 +25,7 @@ def send_result(
     demux_ctrl = res | yield_zeros_and_eot
 
     maybe_send = czip(addr, demux_ctrl) | Queue[Union[Unit, addr.dtype[0]], 1]
-    detected_addr = maybe_send | qfilt(sel=1)
+    detected_addr = maybe_send | filt(sel=1)
     interrupt = maybe_send[1] | yield_on_one_uint
 
     return detected_addr, interrupt

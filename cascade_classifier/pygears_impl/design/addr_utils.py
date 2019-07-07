@@ -1,13 +1,13 @@
 from pygears import gear
 from pygears.typing import Queue, Uint, Tuple, Unit
 
-from pygears.common import ccat, dreg
-from pygears.common import cart_sync_with
-from pygears.common.rom import rom
-from pygears.cookbook import rng
-from pygears.common import dreg as dreg_sp
+from pygears.lib import ccat, dreg
+from pygears.lib import cart_sync_with
+from pygears.lib.rom import rom
+from pygears.lib import rng
+from pygears.lib import dreg as dreg_sp
 
-from pygears.common import local_rst
+from pygears.lib import local_rst
 
 import math
 
