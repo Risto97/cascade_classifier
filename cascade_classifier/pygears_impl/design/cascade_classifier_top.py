@@ -25,7 +25,7 @@ def send_result(
     demux_ctrl = res | yield_zeros_and_eot
 
     maybe_send = czip(addr, demux_ctrl) | Queue[Union[Unit, addr.dtype[0]], 1]
-    detected_addr = maybe_send | filt(sel=1)
+    detected_addr = maybe_send | filt(fixsel=1)
     interrupt = maybe_send[1] | yield_on_one_uint
 
     return detected_addr, interrupt

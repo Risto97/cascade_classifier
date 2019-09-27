@@ -27,8 +27,8 @@ def boundaries(scale_counter: Queue[Uint['w_scale'], 1], *, casc_hw):
     for val in casc_hw.boundary_x:
         bound_x_param.append(Uint[casc_hw.w_boundary](val + 1))
 
-    boundary_y = mux_valve(scale_counter[0], *bound_y_param) | union_collapse
-    boundary_x = mux_valve(scale_counter[0], *bound_x_param) | union_collapse
+    boundary_y = mux_valve(scale_counter[0], ccat(*bound_y_param)) | union_collapse
+    boundary_x = mux_valve(scale_counter[0], ccat(*bound_x_param)) | union_collapse
 
     boundary = ccat(boundary_y, boundary_x)
     boundary = ccat(boundary, scale_counter[1]) | Queue[boundary.dtype, 1]
@@ -46,8 +46,8 @@ def scale_ratio(scale_counter: Queue[Uint['w_scale'], 1], *, casc_hw):
     for val in casc_hw.x_ratio:
         x_ratio_param.append(Uint[casc_hw.w_ratio](val))
 
-    y_ratio = mux_valve(scale_counter[0], *y_ratio_param) | union_collapse
-    x_ratio = mux_valve(scale_counter[0], *x_ratio_param) | union_collapse
+    y_ratio = mux_valve(scale_counter[0], ccat(*y_ratio_param)) | union_collapse
+    x_ratio = mux_valve(scale_counter[0], ccat(*x_ratio_param)) | union_collapse
 
     ratio = ccat(y_ratio, x_ratio)
     ratio = ccat(ratio, scale_counter[1]) | Queue[ratio.dtype, 1]

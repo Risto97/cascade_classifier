@@ -2,7 +2,7 @@ from pygears import gear, Intf
 from pygears.typing import Uint, Queue, Array, Tuple, Int, Unit
 
 from pygears.lib import cart, ccat, czip, dreg, local_rst, rom
-from pygears.lib.serialize import serialize, active_serialize
+from pygears.lib.serialize import serialize_plain
 from pygears.lib import decouple as decouple_sp
 from pygears.lib import dreg as dreg_sp
 from pygears.lib import replicate
@@ -50,13 +50,11 @@ def calc_rect_coords(
 
     C = (D - (width | dreg_sp)) | Uint[w_rect]
 
-    sign = ccat(1, 0, 0, 1) | Array[Uint[1], 4] | serialize
+    sign = ccat(1, 0, 0, 1) | Array[Uint[1], 4] | serialize_plain
     rect_coord = ccat(A | dreg_sp, B, C, D) | Array[Uint[w_rect], 4]
-    rect_coord = ccat(
-        rect_coord,
-        4) | Tuple[Array[Uint[w_rect], 4], Uint[3]] | active_serialize
+    rect_coord = rect_coord |  serialize_plain
 
-    return ccat(rect_coord[0], sign, rect_coord[1]) | \
+    return ccat(rect_coord[0], sign[0], rect_coord[1]) | \
         Queue[Tuple[Uint[w_rect], Uint[1]], 1]
 
 

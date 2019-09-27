@@ -20,7 +20,7 @@ def weighted_sum(din: Queue[Tuple[Uint['w_ii'], Uint[1], Int['w_weight']], 1]):
     data_neg = din[0][0] | neg
     data = din[0][0] | data_neg.dtype
 
-    signed_data = mux_valve(din[0][1], data_neg, data) | union_collapse
+    signed_data = mux_valve(din[0][1], ccat(data_neg, data)) | union_collapse
     signed_data = signed_data * din[0][2]
     weighted_data = ccat(signed_data, din[1])
     weighted_data = weighted_data | Queue[weighted_data.dtype[0], 1]
@@ -57,7 +57,7 @@ def leaf_vals(feat_addr: Queue[Uint['w_addr_feat'], 2], din: Uint[1], *,
         dtype=Int[casc_hw.w_leaf_vals])
 
     sync = ccat(din, leaf0, leaf1)
-    dout = mux_valve(sync[0], sync[1], sync[2]) | union_collapse
+    dout = mux_valve(sync[0], ccat(sync[1], sync[2])) | union_collapse
 
     return dout
 
