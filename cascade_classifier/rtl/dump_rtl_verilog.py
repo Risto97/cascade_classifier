@@ -6,8 +6,8 @@ from cascade_classifier.python_utils.sqrt_approx import SqrtClass
 xml_file = "../xml_models/haarcascade_frontalface_default.xml"
 rom_directory = "top/rom/"
 
-# img_fn = "../datasets/rtl7.jpg"
-img_fn = "../datasets/proba.pgm"
+img_fn = "../datasets/rtl7.jpg"
+# img_fn = "../datasets/proba.pgm"
 img = ImageClass()
 img.loadImage(img_fn)
 

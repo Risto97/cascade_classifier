@@ -4,6 +4,7 @@ from cascade_classifier.pygears_impl.design.gears.fifo2 import fifo2
 from cascade_classifier.pygears_impl.design.gears.accum import accum
 from pygears.lib import add, ccat, flatten
 from pygears.lib import dreg as dreg_sp
+from pygears.lib import decouple
 
 
 @gear
@@ -27,7 +28,7 @@ def ii_gen(din: Queue[Uint['w_din'], 2], *, frame_size=(25, 25)):
 
     fifo_in = ccat(add_s, accum_s[1]) | Queue[add_s.dtype, 2]
 
-    fifo_out |= fifo_in | flatten | fifo2(
+    fifo_out |= fifo_in | decouple | flatten | fifo2(
         depth=fifo_depth, preload=frame_size[1], regout=False)
 
     ii_s = fifo_in

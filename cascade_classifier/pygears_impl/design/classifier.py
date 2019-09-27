@@ -3,7 +3,7 @@ from pygears.typing import Array, Int, Uint, Queue, Tuple, Int, Unit
 
 from pygears.lib import cart_sync_with, ccat, neg
 from pygears.lib.mux import mux_valve
-from pygears.lib import lt, mux_valve, union_collapse
+from pygears.lib import lt, union_collapse
 from pygears.lib import rom, dreg
 from pygears.lib import  dreg as dreg_sp
 from pygears.lib import local_rst

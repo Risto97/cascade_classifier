@@ -3,7 +3,7 @@ from pygears.typing import Uint, Queue, Array, Tuple, Int, Unit
 
 from pygears.lib import cart, ccat, czip, dreg, local_rst, rom
 from pygears.lib.serialize import serialize, active_serialize
-from pygears.lib import decoupler as decoupler_sp
+from pygears.lib import decouple as decouple_sp
 from pygears.lib import dreg as dreg_sp
 from pygears.lib import replicate
 
@@ -14,12 +14,12 @@ def features_mem(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, casc_hw):
     w_rect = casc_hw.w_rect_data // 2
 
     rst_in | local_rst
-    rd_addr = rd_addr | decoupler_sp
+    rd_addr = rd_addr | decouple_sp
 
     features_data = []
     for i in range(3):
         feature = rects_mem(rd_addr_if=rd_addr[0], inst_num=i, casc_hw=casc_hw)
-        features_data.append(feature | decoupler_sp)
+        features_data.append(feature | decouple_sp)
 
     feature_data_t = Intf(Tuple[Uint[w_rect], Uint[1], Int[casc_hw.w_weight]])
     features_zip = czip(
@@ -33,7 +33,7 @@ def features_mem(rd_addr: Queue[Uint['w_addr'], 2], rst_in: Unit, *, casc_hw):
     return dout
 
 
-@gear(hdl={'compile': True, 'inline_conditions': True})
+@gear
 def calc_rect_coords(
         din: Tuple[Uint['w_meas'], Uint['w_meas'], Uint['w_rect']],
         *,

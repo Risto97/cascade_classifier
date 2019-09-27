@@ -5,7 +5,7 @@ from cascade_classifier.pygears_impl.design.ii_gen import ii_gen, sii_gen
 from pygears.typing import Queue, Uint
 from pygears.lib.verif import directed
 from pygears.sim import sim
-from pygears.sim.modules.drv import drv
+from pygears.lib.verif import drv
 from pygears.sim.modules.verilator import SimVerilated
 
 img_fn = '../../../datasets/proba.pgm'
@@ -24,4 +24,4 @@ directed(
     drv(t=Queue[Uint[8], 2], seq=seq),
     f=sii_gen(frame_size=img.frame_size, sim_cls=SimVerilated),
     ref=ref_sii)
-sim(outdir="build")
+sim("build/")

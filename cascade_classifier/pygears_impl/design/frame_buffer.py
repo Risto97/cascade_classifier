@@ -5,7 +5,7 @@ from pygears.lib import sdp
 from pygears.lib.rng import rng
 from pygears.lib import ccat, dreg
 from pygears.lib import local_rst
-from pygears.lib import decoupler as decoupler_sp
+from pygears.lib import decouple as decouple_sp
 
 from pygears.lib import alternate_queues
 
@@ -45,4 +45,4 @@ def frame_buffer(din: Queue[Uint['w_din'], 1], rd_addr: Queue[
 
     dout = ccat(rd_data, rd_addr_sdp_dreg[1]) | Queue[rd_data.dtype, 3]
 
-    return dout | decoupler_sp
+    return dout | decouple_sp

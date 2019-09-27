@@ -3,6 +3,6 @@ from pygears.conf.registry import registry, bind
 
 svlib_dir = os.path.join(
     os.path.dirname(__file__), 'gears', 'svlib')
-registry('hdl/include_paths').append(svlib_dir)
+registry('hdl/include').append(svlib_dir)
 
-bind('hdl/debug_intfs', ['*'])
+bind('debug/trace', ['*'])
