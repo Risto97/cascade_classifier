@@ -5,7 +5,7 @@ CC=$(CROSS_COMPILE)gcc
 
 obj-m := dm_cmd.o
 
-KERNELDIR := ../../../linux-xlnx/ # path to kernel source
+KERNELDIR := /tools/work/zturn_linux/linux-xlnx/ # path to kernel source
 PWD := $(shell pwd)
 
 default:

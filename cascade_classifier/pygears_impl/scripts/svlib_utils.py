@@ -4,22 +4,10 @@ import os
 import shutil
 import glob
 
-def copy_svlib():
-    sv_paths = registry('svgen/sv_paths')
-    svlib_dir = os.path.join(registry('svgen/conf')['outdir'], 'svlib')
+def copy_svlib(files):
+    svlib_dir = registry('svgen/conf')['outdir']
 
-    sv_files = []
-    for lib in sv_paths:
-        for r, d, f in os.walk(lib):
-            for file in f:
-                if file.endswith('.sv'):
-                    if (not file.endswith('decoupler2.sv')) and (not file.endswith('dti_spy.sv')):
-                        sv_files.append(os.path.join(r, file))
-
-    if not os.path.exists(svlib_dir):
-        os.mkdir(svlib_dir)
-
-    for fn in sv_files:
+    for fn in files:
         shutil.copy(fn, svlib_dir)
 
 

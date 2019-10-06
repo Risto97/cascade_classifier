@@ -3,9 +3,11 @@ from cascade_classifier.python_utils.cascade_hw import CascadeHW
 
 from pygears.typing import Queue, Uint
 from pygears.lib import shred
-from pygears.sim.modules import drv
-from pygears.svgen import svgen
+from pygears.lib import drv
+from pygears.hdl.hdlgen import hdlgen
 from pygears.conf.registry import bind
+
+from pygears.synth import list_hdl_files
 
 from cascade_classifier.pygears_impl.scripts.svlib_utils import copy_svlib, sed_intf
 
@@ -19,10 +21,16 @@ def svgen_cascade(xml_file, img_size, outdir):
     detected_addr | shred
     interrupt | shred
 
-    bind('hdl/debug_intfs', [])
-    svgen('/cascade_classifier', outdir=outdir, wrapper=True)
+    bind('debug/trace', [])
+    hdlgen('/cascade_classifier', outdir=outdir, wrapper=True, copy_files=True)
+    # print(list_hdl_files('/cascade_classifier', outdir='/tools/tmp/', language='sv'))
 
-    print("Copying svlib files to project")
-    copy_svlib()
+    # print("Copying svlib files to project")
+    # copy_svlib()
     print("Replacing producer, consumer strings with master, slave")
     sed_intf(producer='master', consumer='slave')
+
+# xml_file = r"../../xml_models/haarcascade_frontalface_default.xml"
+# ip_loc = '../build/ip_repo/cascade_classifier_ip/'
+# sv_outdir = ip_loc + 'src'
+# svgen_cascade(xml_file, img_size=(240,320), outdir=sv_outdir)
