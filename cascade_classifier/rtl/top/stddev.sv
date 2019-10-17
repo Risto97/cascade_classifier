@@ -8,7 +8,6 @@ module stddev
     parameter SQRT_DEPTH = 256,
     localparam W_ADDR_SQRT = $clog2(SQRT_DEPTH),
     localparam W_STDDEV = $clog2(2**W_SII) + $clog2((WINDOW_HEIGHT-1)*(WINDOW_WIDTH-1))
-    // localparam W_STDDEV = $clog2(2**W_SII*(WINDOW_HEIGHT-1)*(WINDOW_WIDTH-1))
     )
    (
     input                 clk,
@@ -32,7 +31,7 @@ module stddev
    logic [W_SII+2:0]  sii_sum_data, sii_sum_data_reg;
    logic              sii_sum_valid, sii_sum_ready;
 
-   logic [W_SII+2:0]  ii_sum_data, ii_sum_data_reg;
+   logic [W_II+1:0]  ii_sum_data, ii_sum_data_reg;
    logic              ii_sum_valid, ii_sum_ready;
    logic              sqrt_addr_valid_reg, sqrt_addr_valid_next;
    logic              sqrt_addr_ready;

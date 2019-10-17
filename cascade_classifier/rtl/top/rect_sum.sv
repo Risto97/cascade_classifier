@@ -18,13 +18,15 @@ module rect_sum
 
     output                      dout_valid,
     input                       dout_ready,
-    output signed [W_DOUT-1:0]  dout_data,
+    output signed [W_DOUT-1:0]      dout_data,
     output                      dout_eot
     );
 
    logic [1:0]                 dot_cnt_reg;
-   logic signed [W_DOUT-1:0]   data_accum_reg, data_accum_next;
+   logic signed [W_DATA+6:0]   data_accum_reg, data_accum_next;
    logic                       dout_eot_reg, dout_eot_next;
+   logic signed [W_DOUT-1:0]   dout_o;
+
 
    assign din_ready = dout_ready;
    // assign weight_ready = dout_ready;
@@ -32,8 +34,10 @@ module rect_sum
    assign dout_eot = dout_eot_reg;
    assign dout_valid = dout_eot_reg;
 
-   assign dout_data = (dout_eot_reg) ? (4096 * weight * data_accum_reg) : 0; // DELETE THIS CONDITIONAL ASSIGNMENT AFTER TEST
+   assign dout_o = (dout_eot_reg) ? (weight * data_accum_reg) : 0; // DELETE THIS CONDITIONAL ASSIGNMENT AFTER TEST
    assign weight_ready = (weight_valid && dout_eot_next) ? 1 : 0;
+
+   assign dout_data = dout_o * 4096;
 
    always_comb
      begin
